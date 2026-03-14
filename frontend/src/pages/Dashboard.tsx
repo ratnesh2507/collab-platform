@@ -1,7 +1,7 @@
 import { useAuth } from "../hooks/useAuth";
 import api from "../lib/api";
 import { useNavigate } from "react-router-dom";
-import { LogOut, Plus, FolderOpen } from "lucide-react";
+import { LogOut, Plus, GitBranch } from "lucide-react";
 
 export default function Dashboard() {
   const { user, isLoading } = useAuth();
@@ -39,10 +39,10 @@ export default function Dashboard() {
       <nav className="navbar">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-linear-to-br from-primary to-accent-dim">
-            <FolderOpen size={15} color="white" />
+            <GitBranch size={15} color="white" />
           </div>
           <span className="font-semibold text-[15px] text-ink">
-            CollabPlatform
+            BranchBoard
           </span>
         </div>
 
@@ -94,7 +94,7 @@ export default function Dashboard() {
         {/* Empty state */}
         <div className="empty-state fade-in">
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 mb-4">
-            <FolderOpen size={24} className="text-primary" />
+            <GitBranch size={24} className="text-primary" />
           </div>
           <h3 className="font-semibold text-[15px] text-ink-mid mb-2">
             No projects yet

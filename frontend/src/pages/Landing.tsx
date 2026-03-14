@@ -15,7 +15,7 @@ export default function Landing() {
         {/* Badge */}
         <div className="badge badge-primary mb-8">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary mr-1.5" />
-          Developer Collaboration Platform
+          BranchBoard
         </div>
 
         {/* Heading */}
