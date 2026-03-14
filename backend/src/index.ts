@@ -4,6 +4,7 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
+import authRoutes from "./routes/auth.routes";
 
 dotenv.config();
 
@@ -26,13 +27,15 @@ app.use(
 app.use(express.json());
 app.use(cookieParser());
 
+// Routes
+app.use("/api/auth", authRoutes);
+
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
 });
 
 io.on("connection", (socket) => {
   console.log("Client connected:", socket.id);
-
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
   });
