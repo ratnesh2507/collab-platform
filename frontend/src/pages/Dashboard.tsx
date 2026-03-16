@@ -47,12 +47,16 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <div className="relative">
+          <div className="flex items-center gap-2.5">
+            {/* Avatar with online dot */}
+            <div className="relative w-8 h-8 shrink-0">
               <img
                 src={user.avatar}
                 alt={user.username}
-                className="avatar avatar-md"
+                width={32}
+                height={32}
+                className="avatar w-full h-full"
+                referrerPolicy="no-referrer"
               />
               <span className="online-dot absolute -bottom-0.5 -right-0.5" />
             </div>
@@ -65,7 +69,7 @@ export default function Dashboard() {
 
           <button
             onClick={handleLogout}
-            className="btn-icon tooltip"
+            className="btn-icon"
             data-tip="Sign out"
           >
             <LogOut size={15} />
@@ -96,10 +100,10 @@ export default function Dashboard() {
           <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 border border-primary/25 mb-4">
             <GitBranch size={24} className="text-primary" />
           </div>
-          <h3 className="font-semibold text-[15px] text-ink-mid mb-2">
+          <h3 className="font-semibold text-[16px] text-ink-mid mb-2">
             No projects yet
           </h3>
-          <p className="text-[13px] text-ink-dim mb-5">
+          <p className="text-[13px] text-ink-dim mb-6">
             Create your first project and invite your team to get started
           </p>
           <button className="btn btn-primary btn-md">
