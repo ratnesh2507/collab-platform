@@ -8,6 +8,19 @@ export interface User {
   createdAt: string;
 }
 
+export interface Column {
+  id: string;
+  name: string;
+  order: number;
+  projectId: string;
+}
+
+export interface ProjectMember {
+  id: string;
+  role: "OWNER" | "MEMBER";
+  user: User;
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -16,4 +29,7 @@ export interface Project {
   inviteToken: string;
   ownerId: string;
   createdAt: string;
+  members: ProjectMember[];
+  columns?: Column[];
+  _count?: { columns: number };
 }

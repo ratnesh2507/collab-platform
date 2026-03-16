@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import authRoutes from "./routes/auth.routes";
+import projectRoutes from "./routes/project.routes";
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use(cookieParser());
 
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/projects", projectRoutes);
 
 app.get("/health", (req, res) => {
   res.json({ status: "ok" });
