@@ -33,3 +33,26 @@ export interface Project {
   columns?: Column[];
   _count?: { columns: number };
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  order: number;
+  columnId: string;
+  assigneeId: string | null;
+  assignee: User | null;
+  creatorId: string;
+  creator: User;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ColumnWithTasks extends Column {
+  tasks: Task[];
+}
+
+export interface ProjectWithColumns extends Project {
+  columns: ColumnWithTasks[];
+}
