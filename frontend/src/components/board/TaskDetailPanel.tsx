@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Trash2, Save } from "lucide-react";
 import type { Task, ProjectMember } from "../../types";
 import { useUpdateTask, useDeleteTask } from "../../hooks/useTasks";
+import { getSocket } from "../../lib/socket";
 
 type Props = {
   task: Task;
@@ -53,11 +54,13 @@ export default function TaskDetailPanel({
         assigneeId: assigneeId || null,
       },
     });
+    getSocket().emit("task-updated", { projectId, task });
     onClose();
   };
 
   const handleDelete = async () => {
     await deleteTask(task.id);
+    getSocket().emit("task-deleted", { projectId, taskId: task.id });
     onClose();
   };
 

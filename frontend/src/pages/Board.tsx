@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GitBranch, LogOut, ArrowLeft } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
@@ -7,10 +7,10 @@ import api from "../lib/api";
 import type { Task } from "../types";
 import BoardColumn from "../components/board/BoardColumn";
 import TaskDetailPanel from "../components/board/TaskDetailPanel";
+import { connectSocket, disconnectSocket, getSocket } from "../lib/socket";
 import {
   DndContext,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
   PointerSensor,
   useSensor,
@@ -23,16 +23,41 @@ export default function Board() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { data: project, isLoading } = useBoard(projectId!);
+  const { data: project, isLoading, refetch } = useBoard(projectId!);
   const { mutateAsync: moveTask } = useMoveTask(projectId!);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+  const [onlineCount, setOnlineCount] = useState(1);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 5 },
-    }),
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
+
+  // Socket setup
+  useEffect(() => {
+    if (!projectId) return;
+
+    const socket = connectSocket();
+    socket.emit("join-project", projectId);
+
+    socket.on("task-created", () => refetch());
+    socket.on("task-updated", () => refetch());
+    socket.on("task-deleted", () => refetch());
+    socket.on("task-moved", () => refetch());
+    socket.on("user-joined", () => setOnlineCount((c) => c + 1));
+    socket.on("user-left", () => setOnlineCount((c) => Math.max(1, c - 1)));
+
+    return () => {
+      socket.emit("leave-project", projectId);
+      socket.off("task-created");
+      socket.off("task-updated");
+      socket.off("task-deleted");
+      socket.off("task-moved");
+      socket.off("user-joined");
+      socket.off("user-left");
+      disconnectSocket();
+    };
+  }, [projectId]);
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
@@ -40,10 +65,9 @@ export default function Board() {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
     const task = project?.columns
       .flatMap((c) => c.tasks)
-      .find((t) => t.id === active.id);
+      .find((t) => t.id === event.active.id);
     if (task) setActiveTask(task);
   };
 
@@ -91,6 +115,13 @@ export default function Board() {
 
     try {
       await moveTask({ taskId, columnId: targetColumnId, order: targetOrder });
+      // Emit to other board members
+      getSocket().emit("task-moved", {
+        projectId,
+        taskId,
+        columnId: targetColumnId,
+        order: targetOrder,
+      });
     } catch {
       console.error("Failed to move task");
     }
@@ -122,7 +153,7 @@ export default function Board() {
           <button
             onClick={() => navigate("/dashboard")}
             className="btn-icon tooltip"
-            data-tip="Back to dashboard"
+            data-tip="Back"
           >
             <ArrowLeft size={15} />
           </button>
@@ -145,6 +176,12 @@ export default function Board() {
         </div>
 
         <div className="flex items-center gap-3">
+          {/* Online indicator */}
+          <div className="hidden md:flex items-center gap-1.5 text-[12px] text-ink-dim">
+            <span className="online-dot" style={{ width: 7, height: 7 }} />
+            {onlineCount} online
+          </div>
+
           {/* Member avatars */}
           <div className="hidden md:flex items-center">
             {project.members.slice(0, 4).map((m, i) => (

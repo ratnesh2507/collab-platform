@@ -2,6 +2,7 @@ import { useState } from "react";
 import { X, Plus } from "lucide-react";
 import { useCreateTask } from "../../hooks/useTasks";
 import type { ProjectMember } from "../../types";
+import { getSocket } from "../../lib/socket";
 
 type Props = {
   projectId: string;
@@ -33,13 +34,14 @@ export default function CreateTaskModal({
     }
     setError("");
     try {
-      await mutateAsync({
+      const task = await mutateAsync({
         title: title.trim(),
         description: description.trim() || undefined,
         priority,
         columnId,
         assigneeId: assigneeId || undefined,
       });
+      getSocket().emit("task-created", { projectId, task });
       onClose();
     } catch {
       setError("Failed to create task. Try again.");
