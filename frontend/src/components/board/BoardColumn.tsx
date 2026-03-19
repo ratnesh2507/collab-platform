@@ -3,6 +3,11 @@ import { Plus } from "lucide-react";
 import type { ColumnWithTasks, Task, ProjectMember } from "../../types";
 import TaskCard from "./TaskCard";
 import CreateTaskModal from "./CreateTaskModal";
+import { useDroppable } from "@dnd-kit/core";
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 type Props = {
   column: ColumnWithTasks;
@@ -26,8 +31,14 @@ export default function BoardColumn({
 }: Props) {
   const [showModal, setShowModal] = useState(false);
 
+  const { setNodeRef, isOver } = useDroppable({ id: column.id });
+
+  const taskIds = column.tasks.map((t) => t.id);
+
   return (
-    <div className="flex flex-col min-w-65 max-w-65 bg-surface rounded-lg border border-border">
+    <div
+      className={`flex flex-col min-w-65 max-w-65 bg-surface rounded-lg border transition-colors duration-150 ${isOver ? "border-primary/50" : "border-border"}`}
+    >
       {/* Column header */}
       <div className="column-header">
         <div className="flex items-center gap-2">
@@ -41,29 +52,30 @@ export default function BoardColumn({
             {column.tasks.length}
           </span>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="btn-icon"
-          data-tip="Add task"
-        >
+        <button onClick={() => setShowModal(true)} className="btn-icon">
           <Plus size={14} />
         </button>
       </div>
 
-      {/* Tasks */}
-      <div className="flex flex-col gap-2 p-3 flex-1 min-h-30">
-        {column.tasks.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-[11px] text-ink-ghost">No tasks</p>
-          </div>
-        ) : (
-          column.tasks.map((task) => (
-            <TaskCard key={task.id} task={task} onClick={onTaskClick} />
-          ))
-        )}
-      </div>
+      {/* Tasks — droppable area */}
+      <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
+        <div
+          ref={setNodeRef}
+          className="flex flex-col gap-2 p-3 flex-1 min-h-30"
+        >
+          {column.tasks.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center border border-dashed border-border rounded-md min-h-20">
+              <p className="text-[11px] text-ink-ghost">Drop tasks here</p>
+            </div>
+          ) : (
+            column.tasks.map((task) => (
+              <TaskCard key={task.id} task={task} onClick={onTaskClick} />
+            ))
+          )}
+        </div>
+      </SortableContext>
 
-      {/* Add task button at bottom */}
+      {/* Add task */}
       <div className="px-3 pb-3">
         <button
           onClick={() => setShowModal(true)}

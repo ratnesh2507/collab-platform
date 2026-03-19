@@ -1,23 +1,99 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { GitBranch, LogOut, ArrowLeft, Users } from "lucide-react";
+import { GitBranch, LogOut, ArrowLeft } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
-import { useBoard } from "../hooks/useTasks";
+import { useBoard, useMoveTask } from "../hooks/useTasks";
 import api from "../lib/api";
 import type { Task } from "../types";
 import BoardColumn from "../components/board/BoardColumn";
 import TaskDetailPanel from "../components/board/TaskDetailPanel";
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  type DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  closestCorners,
+} from "@dnd-kit/core";
 
 export default function Board() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { data: project, isLoading } = useBoard(projectId!);
+  const { mutateAsync: moveTask } = useMoveTask(projectId!);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+  );
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
     window.location.href = "/";
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const task = project?.columns
+      .flatMap((c) => c.tasks)
+      .find((t) => t.id === active.id);
+    if (task) setActiveTask(task);
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    setActiveTask(null);
+    const { active, over } = event;
+    if (!over || !project) return;
+
+    const taskId = active.id as string;
+    const overId = over.id as string;
+
+    // Find which column the task is being dropped into
+    let targetColumnId: string | null = null;
+    let targetOrder = 0;
+
+    for (const col of project.columns) {
+      // Dropped directly on a column (empty column)
+      if (col.id === overId) {
+        targetColumnId = col.id;
+        targetOrder = col.tasks.length;
+        break;
+      }
+      // Dropped on another task
+      const taskIndex = col.tasks.findIndex((t) => t.id === overId);
+      if (taskIndex !== -1) {
+        targetColumnId = col.id;
+        targetOrder = taskIndex;
+        break;
+      }
+    }
+
+    if (!targetColumnId) return;
+
+    // Find the task's current column
+    const sourceColumn = project.columns.find((c) =>
+      c.tasks.some((t) => t.id === taskId),
+    );
+    if (!sourceColumn) return;
+
+    // No change
+    if (sourceColumn.id === targetColumnId) {
+      const currentIndex = sourceColumn.tasks.findIndex((t) => t.id === taskId);
+      if (currentIndex === targetOrder) return;
+    }
+
+    try {
+      await moveTask({ taskId, columnId: targetColumnId, order: targetOrder });
+    } catch {
+      console.error("Failed to move task");
+    }
   };
 
   if (isLoading) {
@@ -80,22 +156,10 @@ export default function Board() {
                 height={26}
                 referrerPolicy="no-referrer"
                 className="avatar border-2 border-bg"
-                style={{
-                  width: 26,
-                  height: 26,
-                  marginLeft: i > 0 ? -8 : 0,
-                }}
+                style={{ width: 26, height: 26, marginLeft: i > 0 ? -8 : 0 }}
                 title={m.user.name}
               />
             ))}
-            {project.members.length > 4 && (
-              <div
-                className="w-6 h-6 rounded-full bg-surface-2 border-2 border-bg flex items-center justify-center text-[10px] text-ink-dim"
-                style={{ marginLeft: -8 }}
-              >
-                +{project.members.length - 4}
-              </div>
-            )}
           </div>
 
           <div className="divider-solid w-px h-5" />
@@ -127,19 +191,42 @@ export default function Board() {
       </nav>
 
       {/* Board */}
-      <div className="flex-1 overflow-x-auto">
-        <div className="flex gap-4 p-6 h-full min-h-0">
-          {project.columns?.map((column) => (
-            <BoardColumn
-              key={column.id}
-              column={column}
-              projectId={project.id}
-              members={project.members}
-              onTaskClick={setSelectedTask}
-            />
-          ))}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex-1 overflow-x-auto">
+          <div className="flex gap-4 p-6 h-full min-h-0">
+            {project.columns?.map((column) => (
+              <BoardColumn
+                key={column.id}
+                column={column}
+                projectId={project.id}
+                members={project.members}
+                onTaskClick={setSelectedTask}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+
+        {/* Drag overlay — shows a ghost of the card while dragging */}
+        <DragOverlay>
+          {activeTask ? (
+            <div className="task-card flex flex-col gap-2.5 opacity-90 shadow-lg rotate-1">
+              <p className="text-[13px] text-ink-mid leading-snug">
+                {activeTask.title}
+              </p>
+              <span
+                className={`badge text-[10px] w-fit priority-${activeTask.priority.toLowerCase()}`}
+              >
+                {activeTask.priority}
+              </span>
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Task detail panel */}
       {selectedTask && (

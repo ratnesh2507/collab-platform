@@ -1,5 +1,7 @@
 import type { Task } from "../../types";
 import { User } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 type Props = {
   task: Task;
@@ -14,8 +16,28 @@ const priorityClass: Record<string, string> = {
 };
 
 export default function TaskCard({ task, onClick }: Props) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: task.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    cursor: isDragging ? "grabbing" : "grab",
+  };
+
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       className="task-card flex flex-col gap-2.5"
       onClick={() => onClick(task)}
     >
@@ -39,7 +61,7 @@ export default function TaskCard({ task, onClick }: Props) {
             style={{ width: 20, height: 20 }}
           />
         ) : (
-          <div className="w-5 h-5 rounded-full bg-surface-3 border border-border flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-surface-2 border border-border flex items-center justify-center">
             <User size={10} className="text-ink-ghost" />
           </div>
         )}
