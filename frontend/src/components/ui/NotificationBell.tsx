@@ -67,7 +67,7 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {open && (
-        <div className="absolute right-0 top-10 w-80 card shadow-lg z-50 fade-in-scale">
+        <div className="notification-dropdown fade-in-scale">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <span className="font-semibold text-[13px] text-ink">
@@ -90,7 +90,7 @@ export default function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-72 overflow-y-auto">
+          <div className="notification-list">
             {notifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 gap-2">
                 <Bell size={20} className="text-ink-ghost" />

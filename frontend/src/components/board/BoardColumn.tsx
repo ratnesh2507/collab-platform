@@ -37,7 +37,7 @@ export default function BoardColumn({
 
   return (
     <div
-      className={`flex flex-col min-w-65 max-w-65 bg-surface rounded-lg border transition-colors duration-150 ${isOver ? "border-primary/50" : "border-border"}`}
+      className={`board-column transition-colors duration-150 ${isOver ? "border-primary/50" : ""}`}
     >
       {/* Column header */}
       <div className="column-header">
@@ -59,10 +59,7 @@ export default function BoardColumn({
 
       {/* Tasks — droppable area */}
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-        <div
-          ref={setNodeRef}
-          className="flex flex-col gap-2 p-3 flex-1 min-h-30"
-        >
+        <div ref={setNodeRef} className="board-column-tasks">
           {column.tasks.length === 0 ? (
             <div className="flex-1 flex items-center justify-center border border-dashed border-border rounded-md min-h-20">
               <p className="text-[11px] text-ink-ghost">Drop tasks here</p>

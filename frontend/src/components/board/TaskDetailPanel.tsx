@@ -73,9 +73,9 @@ export default function TaskDetailPanel({
       />
 
       {/* Panel */}
-      <div className="relative w-full max-w-md bg-surface border-l border-border flex flex-col h-full slide-in-right">
+      <div className="side-panel slide-in-right">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border shrink-0">
+        <div className="side-panel-header">
           <div className="flex items-center gap-2">
             <span className={`badge ${priorityClass[priority]}`}>
               {priority}
@@ -87,7 +87,7 @@ export default function TaskDetailPanel({
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-5">
+        <div className="side-panel-body px-6 py-5 flex flex-col gap-5">
           {/* Title */}
           <div className="form-group">
             <label className="form-label">Title</label>
@@ -164,7 +164,7 @@ export default function TaskDetailPanel({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border flex items-center justify-between shrink-0">
+        <div className="side-panel-footer">
           {confirmDelete ? (
             <div className="flex items-center gap-2">
               <span className="text-[12px] text-danger">Sure?</span>

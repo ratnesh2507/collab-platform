@@ -247,18 +247,16 @@ export default function Board() {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <div className="flex-1 overflow-x-auto">
-          <div className="flex gap-4 p-6 h-full min-h-0">
-            {project.columns?.map((column) => (
-              <BoardColumn
-                key={column.id}
-                column={column}
-                projectId={project.id}
-                members={project.members}
-                onTaskClick={setSelectedTask}
-              />
-            ))}
-          </div>
+        <div className="board-container">
+          {project.columns?.map((column) => (
+            <BoardColumn
+              key={column.id}
+              column={column}
+              projectId={project.id}
+              members={project.members}
+              onTaskClick={setSelectedTask}
+            />
+          ))}
         </div>
 
         {/* Drag overlay — shows a ghost of the card while dragging */}

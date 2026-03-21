@@ -23,9 +23,9 @@ export default function ActivityFeed({ projectId, onClose }: Props) {
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative w-full max-w-sm bg-surface border-l border-border flex flex-col h-full slide-in-right">
+      <div className="side-panel slide-in-right" style={{ maxWidth: "380px" }}>
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+        <div className="side-panel-header">
           <h2 className="font-semibold text-[15px] text-ink">Activity</h2>
           <button onClick={onClose} className="btn-icon">
             <X size={16} />
@@ -33,7 +33,7 @@ export default function ActivityFeed({ projectId, onClose }: Props) {
         </div>
 
         {/* Feed */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="side-panel-body">
           {isLoading ? (
             <div className="flex flex-col gap-3 p-5">
               {[1, 2, 3, 4].map((i) => (
