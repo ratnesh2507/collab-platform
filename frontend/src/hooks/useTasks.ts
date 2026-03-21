@@ -1,6 +1,29 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { ProjectWithColumns } from "../types";
+import type { ProjectWithColumns, Task } from "../types";
+
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+export type CreateTaskInput = {
+  title: string;
+  description?: string;
+  priority: TaskPriority;
+  columnId: string;
+  assigneeId?: string;
+};
+
+export type UpdateTaskInput = {
+  title?: string;
+  description?: string | null;
+  priority?: TaskPriority;
+  assigneeId?: string | null;
+};
+
+export type MoveTaskInput = {
+  taskId: string;
+  columnId: string;
+  order: number;
+};
 
 export function useBoard(projectId: string) {
   return useQuery<ProjectWithColumns>({
@@ -10,19 +33,14 @@ export function useBoard(projectId: string) {
       return res.data;
     },
     enabled: !!projectId,
+    staleTime: 10_000,
   });
 }
 
 export function useCreateTask(projectId: string) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: {
-      title: string;
-      description?: string;
-      priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-      columnId: string;
-      assigneeId?: string;
-    }) => {
+  return useMutation<Task, Error, CreateTaskInput>({
+    mutationFn: async (data: CreateTaskInput) => {
       const res = await api.post(`/api/projects/${projectId}/tasks`, data);
       return res.data;
     },
@@ -34,19 +52,8 @@ export function useCreateTask(projectId: string) {
 
 export function useUpdateTask(projectId: string) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      taskId,
-      data,
-    }: {
-      taskId: string;
-      data: {
-        title?: string;
-        description?: string | null;
-        priority?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
-        assigneeId?: string | null;
-      };
-    }) => {
+  return useMutation<Task, Error, { taskId: string; data: UpdateTaskInput }>({
+    mutationFn: async ({ taskId, data }) => {
       const res = await api.patch(
         `/api/projects/${projectId}/tasks/${taskId}`,
         data,
@@ -61,7 +68,7 @@ export function useUpdateTask(projectId: string) {
 
 export function useDeleteTask(projectId: string) {
   const queryClient = useQueryClient();
-  return useMutation({
+  return useMutation<void, Error, string>({
     mutationFn: async (taskId: string) => {
       await api.delete(`/api/projects/${projectId}/tasks/${taskId}`);
     },
@@ -73,16 +80,8 @@ export function useDeleteTask(projectId: string) {
 
 export function useMoveTask(projectId: string) {
   const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async ({
-      taskId,
-      columnId,
-      order,
-    }: {
-      taskId: string;
-      columnId: string;
-      order: number;
-    }) => {
+  return useMutation<Task, Error, MoveTaskInput>({
+    mutationFn: async ({ taskId, columnId, order }: MoveTaskInput) => {
       const res = await api.patch(
         `/api/projects/${projectId}/tasks/${taskId}/move`,
         { columnId, order },

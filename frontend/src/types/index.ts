@@ -1,3 +1,4 @@
+import type { TaskPriority } from "../hooks/useTasks";
 export interface User {
   id: string;
   githubId: string;
@@ -38,7 +39,7 @@ export interface Task {
   id: string;
   title: string;
   description: string | null;
-  priority: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  priority: TaskPriority;
   order: number;
   columnId: string;
   assigneeId: string | null;

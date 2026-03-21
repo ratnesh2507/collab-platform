@@ -8,6 +8,19 @@ export interface Notification {
   createdAt: string;
 }
 
+export interface ActivityItem {
+  id: string;
+  action: string;
+  createdAt: string;
+  user: {
+    name: string;
+    username: string;
+    avatar: string;
+  };
+}
+
+const NOTIFICATION_POLL_INTERVAL = 30_000; // 30s fallback poll
+
 export function useNotifications() {
   return useQuery<Notification[]>({
     queryKey: ["notifications"],
@@ -15,7 +28,8 @@ export function useNotifications() {
       const res = await api.get("/api/notifications");
       return res.data;
     },
-    refetchInterval: 30000, // poll every 30s as fallback
+    staleTime: 10_000,
+    refetchInterval: NOTIFICATION_POLL_INTERVAL,
   });
 }
 
@@ -44,12 +58,13 @@ export function useMarkRead() {
 }
 
 export function useActivity(projectId: string) {
-  return useQuery({
+  return useQuery<ActivityItem[]>({
     queryKey: ["activity", projectId],
     queryFn: async () => {
       const res = await api.get(`/api/projects/${projectId}/activity`);
       return res.data;
     },
     enabled: !!projectId,
+    staleTime: 15_000,
   });
 }

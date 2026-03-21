@@ -6,6 +6,9 @@ export function useAuth() {
   const { user, isLoading, setUser, setLoading } = useAuthStore();
 
   useEffect(() => {
+    // Skip fetch if user is already loaded
+    if (user !== undefined && !isLoading) return;
+
     const fetchUser = async () => {
       try {
         const res = await api.get("/api/auth/me");
@@ -18,6 +21,7 @@ export function useAuth() {
     };
 
     fetchUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { user, isLoading };
