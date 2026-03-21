@@ -14,14 +14,17 @@ export function getSocket(): Socket {
   return socket;
 }
 
-export function connectSocket() {
+export function connectSocket(userId?: string) {
   const s = getSocket();
   if (!s.connected) s.connect();
+  if (userId) {
+    s.off("connect"); // remove previous listener first
+    s.on("connect", () => s.emit("join-user", userId));
+    s.emit("join-user", userId);
+  }
   return s;
 }
 
 export function disconnectSocket() {
-  if (socket?.connected) {
-    socket.disconnect();
-  }
+  if (socket?.connected) socket.disconnect();
 }

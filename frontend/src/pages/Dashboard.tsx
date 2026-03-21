@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { useProjects } from "../hooks/useProjects";
 import api from "../lib/api";
@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { LogOut, Plus, GitBranch } from "lucide-react";
 import CreateProjectModal from "../components/projects/CreateProjectModal";
 import ProjectCard from "../components/projects/ProjectCard";
+import NotificationBell from "../components/ui/NotificationBell";
+import { connectSocket } from "../lib/socket";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
@@ -13,6 +15,9 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
+  useEffect(() => {
+    if (user?.id) connectSocket(user.id);
+  }, [user?.id]);
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
     window.location.href = "/";
@@ -70,7 +75,7 @@ export default function Dashboard() {
               {user.username}
             </span>
           </div>
-
+          <NotificationBell />
           <div className="divider-solid w-px h-5" />
 
           <button

@@ -1,12 +1,15 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GitBranch, LogOut, ArrowLeft } from "lucide-react";
+import { Activity } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useBoard, useMoveTask } from "../hooks/useTasks";
 import api from "../lib/api";
 import type { Task } from "../types";
 import BoardColumn from "../components/board/BoardColumn";
 import TaskDetailPanel from "../components/board/TaskDetailPanel";
+import NotificationBell from "../components/ui/NotificationBell";
+import ActivityFeed from "../components/board/ActivityFeed";
 import { connectSocket, disconnectSocket, getSocket } from "../lib/socket";
 import {
   DndContext,
@@ -28,6 +31,7 @@ export default function Board() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [onlineCount, setOnlineCount] = useState(1);
+  const [showActivity, setShowActivity] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -37,7 +41,7 @@ export default function Board() {
   useEffect(() => {
     if (!projectId) return;
 
-    const socket = connectSocket();
+    const socket = connectSocket(user?.id);
     socket.emit("join-project", projectId);
 
     socket.on("task-created", () => refetch());
@@ -157,6 +161,15 @@ export default function Board() {
           >
             <ArrowLeft size={15} />
           </button>
+          <button
+            onClick={() => setShowActivity(true)}
+            className="btn-icon tooltip"
+            data-tip="Activity feed"
+          >
+            <Activity size={15} />
+          </button>
+
+          <NotificationBell />
           <div className="divider-solid w-px h-5" />
           <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-linear-to-br from-primary to-accent-dim">
             <GitBranch size={13} color="white" />
@@ -272,6 +285,13 @@ export default function Board() {
           projectId={project.id}
           members={project.members}
           onClose={() => setSelectedTask(null)}
+        />
+      )}
+      {/* Activity Feed */}
+      {showActivity && (
+        <ActivityFeed
+          projectId={project.id}
+          onClose={() => setShowActivity(false)}
         />
       )}
     </div>
