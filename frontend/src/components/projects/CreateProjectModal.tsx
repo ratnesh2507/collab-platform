@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Plus } from "lucide-react";
+import { X, Plus, GitBranch } from "lucide-react";
 import { useCreateProject } from "../../hooks/useProjects";
 import { useNavigate } from "react-router-dom";
 
@@ -59,11 +59,18 @@ export default function CreateProjectModal({ onClose }: Props) {
       <div className="modal fade-in-scale">
         {/* Header */}
         <div className="modal-header">
-          <div>
-            <h2 className="font-semibold text-[16px] text-ink">New Project</h2>
-            <p className="text-[12px] text-ink-dim mt-0.5">
-              Create a project and invite your team
-            </p>
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+              <GitBranch size={15} className="text-primary" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-[16px] text-ink">
+                New Project
+              </h2>
+              <p className="text-[12px] text-ink-dim mt-0.5">
+                Create a project and invite your team
+              </p>
+            </div>
           </div>
           <button onClick={onClose} className="btn-icon">
             <X size={16} />
@@ -94,16 +101,19 @@ export default function CreateProjectModal({ onClose }: Props) {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               maxLength={500}
-              rows={3}
+              rows={2}
             />
           </div>
 
           {/* Tags */}
           <div className="form-group">
-            <label className="form-label">Tags</label>
+            <div className="flex items-center justify-between">
+              <label className="form-label">Tags</label>
+              <span className="form-hint">{tags.length}/5</span>
+            </div>
             <input
               className="input"
-              placeholder="Type a tag and press Enter (max 5)"
+              placeholder="Type a tag and press Enter"
               value={tagInput}
               onChange={(e) => setTagInput(e.target.value)}
               onKeyDown={handleAddTag}
@@ -116,7 +126,7 @@ export default function CreateProjectModal({ onClose }: Props) {
                     {tag}
                     <button
                       onClick={() => removeTag(tag)}
-                      className="text-ink-ghost hover:text-ink-dim transition-colors"
+                      className="p-0.5 text-ink-ghost hover:text-ink-dim transition-colors rounded"
                     >
                       <X size={10} />
                     </button>
@@ -124,44 +134,25 @@ export default function CreateProjectModal({ onClose }: Props) {
                 ))}
               </div>
             )}
-            <p className="form-hint">{tags.length}/5 tags</p>
           </div>
-
-          {error && <p className="form-error">{error}</p>}
         </div>
 
         {/* Footer */}
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending || !name.trim()}
-            className="btn btn-primary btn-sm"
-          >
-            {isPending ? (
-              <>
-                <span
-                  className="loading-dot w-1.5 h-1.5"
-                  style={{ animationDelay: "0s" }}
-                />
-                <span
-                  className="loading-dot w-1.5 h-1.5"
-                  style={{ animationDelay: "0.15s" }}
-                />
-                <span
-                  className="loading-dot w-1.5 h-1.5"
-                  style={{ animationDelay: "0.3s" }}
-                />
-              </>
-            ) : (
-              <>
-                <Plus size={14} />
-                Create Project
-              </>
-            )}
-          </button>
+        <div className="modal-footer flex-col items-stretch gap-3">
+          {error && <p className="form-error text-center">{error}</p>}
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={onClose} className="btn btn-secondary btn-sm">
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isPending || !name.trim()}
+              className="btn btn-primary btn-sm"
+            >
+              <Plus size={14} />
+              {isPending ? "Creating..." : "Create Project"}
+            </button>
+          </div>
         </div>
       </div>
     </div>
