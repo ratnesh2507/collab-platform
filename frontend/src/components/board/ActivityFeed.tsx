@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import { useActivity } from "../../hooks/useNotifications";
+import { useActivity, type ActivityItem } from "../../hooks/useNotifications";
 
 type Props = {
   projectId: string;
@@ -19,25 +19,33 @@ export default function ActivityFeed({ projectId, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
+      {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/40 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="side-panel slide-in-right" style={{ maxWidth: "380px" }}>
+
+      {/* Panel — rounded + inset margin */}
+      <div className="side-panel slide-in-right w-95 rounded-l-2xl my-3 mr-3">
         {/* Header */}
-        <div className="side-panel-header">
-          <h2 className="font-semibold text-[15px] text-ink">Activity</h2>
+        <div className="side-panel-header rounded-tl-2xl">
+          <div>
+            <h2 className="font-semibold text-[15px] text-ink">Activity</h2>
+            <p className="text-[12px] text-ink-dim mt-0.5">
+              Recent project events
+            </p>
+          </div>
           <button onClick={onClose} className="btn-icon">
             <X size={16} />
           </button>
         </div>
 
         {/* Feed */}
-        <div className="side-panel-body">
+        <div className="side-panel-body px-3 py-3">
           {isLoading ? (
-            <div className="flex flex-col gap-3 p-5">
+            <div className="flex flex-col gap-2">
               {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex gap-3 items-start">
+                <div key={i} className="card-md p-3 flex gap-3 items-start">
                   <div className="skeleton w-7 h-7 rounded-full shrink-0" />
                   <div className="flex-1 flex flex-col gap-1.5">
                     <div className="skeleton h-3 w-3/4" />
@@ -47,15 +55,18 @@ export default function ActivityFeed({ projectId, onClose }: Props) {
               ))}
             </div>
           ) : activity.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full gap-2 pb-10">
-              <p className="text-[13px] text-ink-ghost">No activity yet</p>
+            <div className="card-md flex flex-col items-center justify-center py-12 gap-2 text-center">
+              <p className="text-[13px] text-ink-dim">No activity yet</p>
+              <p className="text-[12px] text-ink-ghost">
+                Actions like creating and moving tasks will appear here
+              </p>
             </div>
           ) : (
-            <div className="flex flex-col divide-y divide-border">
-              {activity.map((item: any) => (
+            <div className="flex flex-col gap-2">
+              {(activity as ActivityItem[]).map((item) => (
                 <div
                   key={item.id}
-                  className="flex items-start gap-3 px-5 py-3.5"
+                  className="card-md p-3 flex items-start gap-3"
                 >
                   <img
                     src={item.user.avatar}
@@ -63,12 +74,11 @@ export default function ActivityFeed({ projectId, onClose }: Props) {
                     width={28}
                     height={28}
                     referrerPolicy="no-referrer"
-                    className="avatar shrink-0"
-                    style={{ width: 28, height: 28 }}
+                    className="avatar w-7 h-7 shrink-0"
                   />
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] text-ink-mid leading-snug">
-                      <span className="font-medium text-ink">
+                      <span className="font-semibold text-ink">
                         {item.user.name}
                       </span>{" "}
                       {item.action}

@@ -29,7 +29,6 @@ export default function TaskCard({ task, onClick }: Props) {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,
-    cursor: isDragging ? "grabbing" : "grab",
   };
 
   return (
@@ -38,14 +37,23 @@ export default function TaskCard({ task, onClick }: Props) {
       style={style}
       {...attributes}
       {...listeners}
-      className="task-card flex flex-col gap-2.5"
-      onClick={() => onClick(task)}
+      className="task-card flex flex-col gap-2"
+      onClick={() => !isDragging && onClick(task)}
     >
       {/* Title */}
-      <p className="text-[13px] text-ink-mid leading-snug">{task.title}</p>
+      <p className="text-[13px] text-ink leading-snug font-medium">
+        {task.title}
+      </p>
+
+      {/* Description preview */}
+      {task.description && (
+        <p className="text-[11px] text-ink-dim leading-snug line-clamp-2">
+          {task.description}
+        </p>
+      )}
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 mt-0.5">
         <span className={`badge ${priorityClass[task.priority]} text-[10px]`}>
           {task.priority}
         </span>
@@ -57,11 +65,10 @@ export default function TaskCard({ task, onClick }: Props) {
             width={20}
             height={20}
             referrerPolicy="no-referrer"
-            className="avatar"
-            style={{ width: 20, height: 20 }}
+            className="avatar w-5 h-5"
           />
         ) : (
-          <div className="w-5 h-5 rounded-full bg-surface-2 border border-border flex items-center justify-center">
+          <div className="w-5 h-5 rounded-full bg-surface-3 border border-border flex items-center justify-center shrink-0">
             <User size={10} className="text-ink-ghost" />
           </div>
         )}

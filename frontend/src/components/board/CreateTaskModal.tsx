@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { X, Plus } from "lucide-react";
 import { useCreateTask } from "../../hooks/useTasks";
-import type { ProjectMember } from "../../types";
 import { getSocket } from "../../lib/socket";
+import type { ProjectMember } from "../../types";
 
 type Props = {
   projectId: string;
   columnId: string;
+  columnName?: string;
   members: ProjectMember[];
   onClose: () => void;
 };
@@ -16,6 +17,7 @@ const priorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
 export default function CreateTaskModal({
   projectId,
   columnId,
+  columnName,
   members,
   onClose,
 }: Props) {
@@ -59,7 +61,9 @@ export default function CreateTaskModal({
           <div>
             <h2 className="font-semibold text-[16px] text-ink">New Task</h2>
             <p className="text-[12px] text-ink-dim mt-0.5">
-              Add a task to this column
+              {columnName
+                ? `Adding to ${columnName}`
+                : "Add a task to this column"}
             </p>
           </div>
           <button onClick={onClose} className="btn-icon">
@@ -79,7 +83,6 @@ export default function CreateTaskModal({
               onChange={(e) => setTitle(e.target.value)}
               autoFocus
               maxLength={100}
-              onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             />
           </div>
 
@@ -96,58 +99,58 @@ export default function CreateTaskModal({
             />
           </div>
 
-          {/* Priority + Assignee row */}
-          <div className="flex gap-4">
-            <div className="form-group flex-1">
-              <label className="form-label">Priority</label>
-              <select
-                className="input"
-                value={priority}
-                onChange={(e) =>
-                  setPriority(e.target.value as (typeof priorities)[number])
-                }
-              >
-                {priorities.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="form-group flex-1">
-              <label className="form-label">Assignee</label>
-              <select
-                className="input"
-                value={assigneeId}
-                onChange={(e) => setAssigneeId(e.target.value)}
-              >
-                <option value="">Unassigned</option>
-                {members.map((m) => (
-                  <option key={m.user.id} value={m.user.id}>
-                    {m.user.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Priority */}
+          <div className="form-group">
+            <label className="form-label">Priority</label>
+            <select
+              className="input"
+              value={priority}
+              onChange={(e) =>
+                setPriority(e.target.value as (typeof priorities)[number])
+              }
+            >
+              {priorities.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
           </div>
 
-          {error && <p className="form-error">{error}</p>}
+          {/* Assignee */}
+          <div className="form-group">
+            <label className="form-label">Assignee</label>
+            <select
+              className="input"
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+            >
+              <option value="">Unassigned</option>
+              {members.map((m) => (
+                <option key={m.user.id} value={m.user.id}>
+                  {m.user.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         {/* Footer */}
-        <div className="modal-footer">
-          <button onClick={onClose} className="btn btn-secondary btn-sm">
-            Cancel
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending || !title.trim()}
-            className="btn btn-primary btn-sm"
-          >
-            <Plus size={14} />
-            {isPending ? "Creating..." : "Create Task"}
-          </button>
+        <div className="modal-footer flex-col items-stretch gap-3">
+          {error && <p className="form-error text-center">{error}</p>}
+          <div className="flex items-center justify-end gap-2">
+            <button onClick={onClose} className="btn btn-secondary btn-sm">
+              Cancel
+            </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isPending || !title.trim()}
+              className="btn btn-primary btn-sm"
+            >
+              <Plus size={14} />
+              {isPending ? "Creating..." : "Create Task"}
+            </button>
+          </div>
         </div>
       </div>
     </div>

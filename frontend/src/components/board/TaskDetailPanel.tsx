@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { X, Trash2, Save } from "lucide-react";
+import { X, Trash2, Save, Calendar, User } from "lucide-react";
 import type { Task, ProjectMember } from "../../types";
 import { useUpdateTask, useDeleteTask } from "../../hooks/useTasks";
 import { getSocket } from "../../lib/socket";
@@ -45,7 +45,7 @@ export default function TaskDetailPanel({
     assigneeId !== (task.assigneeId ?? "");
 
   const handleSave = async () => {
-    await updateTask({
+    const updated = await updateTask({
       taskId: task.id,
       data: {
         title: title.trim(),
@@ -54,7 +54,8 @@ export default function TaskDetailPanel({
         assigneeId: assigneeId || null,
       },
     });
-    getSocket().emit("task-updated", { projectId, task });
+    // Emit the updated task, not the stale original
+    getSocket().emit("task-updated", { projectId, task: updated });
     onClose();
   };
 
@@ -63,6 +64,8 @@ export default function TaskDetailPanel({
     getSocket().emit("task-deleted", { projectId, taskId: task.id });
     onClose();
   };
+
+  const selectedMember = members.find((m) => m.user.id === assigneeId);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
@@ -73,21 +76,24 @@ export default function TaskDetailPanel({
       />
 
       {/* Panel */}
-      <div className="side-panel slide-in-right">
+      <div className="side-panel slide-in-right rounded-l-2xl my-3 mr-3">
         {/* Header */}
-        <div className="side-panel-header">
-          <div className="flex items-center gap-2">
-            <span className={`badge ${priorityClass[priority]}`}>
+        <div className="side-panel-header rounded-tl-2xl">
+          <div className="flex flex-col gap-1.5 min-w-0 flex-1 pr-3">
+            <span className={`badge w-fit ${priorityClass[priority]}`}>
               {priority}
             </span>
+            <h2 className="font-semibold text-[14px] text-ink leading-snug truncate">
+              {title}
+            </h2>
           </div>
-          <button onClick={onClose} className="btn-icon">
+          <button onClick={onClose} className="btn-icon shrink-0">
             <X size={16} />
           </button>
         </div>
 
         {/* Content */}
-        <div className="side-panel-body px-6 py-5 flex flex-col gap-5">
+        <div className="side-panel-body px-5 py-5 flex flex-col gap-5">
           {/* Title */}
           <div className="form-group">
             <label className="form-label">Title</label>
@@ -108,7 +114,7 @@ export default function TaskDetailPanel({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Add a description..."
               maxLength={1000}
-              rows={5}
+              rows={4}
             />
           </div>
 
@@ -133,73 +139,98 @@ export default function TaskDetailPanel({
           {/* Assignee */}
           <div className="form-group">
             <label className="form-label">Assignee</label>
-            <select
-              className="input"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-            >
-              <option value="">Unassigned</option>
-              {members.map((m) => (
-                <option key={m.user.id} value={m.user.id}>
-                  {m.user.name}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center gap-2">
+              {selectedMember && (
+                <img
+                  src={selectedMember.user.avatar}
+                  alt={selectedMember.user.username}
+                  width={28}
+                  height={28}
+                  referrerPolicy="no-referrer"
+                  className="avatar w-7 h-7 shrink-0"
+                />
+              )}
+              <select
+                className="input"
+                value={assigneeId}
+                onChange={(e) => setAssigneeId(e.target.value)}
+              >
+                <option value="">Unassigned</option>
+                {members.map((m) => (
+                  <option key={m.user.id} value={m.user.id}>
+                    {m.user.name}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
 
           {/* Meta */}
-          <div className="divider-solid" />
-          <div className="flex flex-col gap-1.5">
-            <p className="text-[12px] text-ink-ghost">
-              Created by {task.creator.name}
-            </p>
-            <p className="text-[12px] text-ink-ghost">
-              {new Date(task.createdAt).toLocaleDateString("en-US", {
-                month: "short",
-                day: "numeric",
-                year: "numeric",
-              })}
-            </p>
+          <div className="card-md p-3 flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <User size={11} className="text-ink-ghost shrink-0" />
+              <p className="text-[11px] text-ink-ghost">
+                Created by{" "}
+                <span className="text-ink-dim font-medium">
+                  {task.creator.name}
+                </span>
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Calendar size={11} className="text-ink-ghost shrink-0" />
+              <p className="text-[11px] text-ink-ghost">
+                {new Date(task.createdAt).toLocaleDateString("en-US", {
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="side-panel-footer">
+        <div className="side-panel-footer rounded-bl-2xl">
           {confirmDelete ? (
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] text-danger">Sure?</span>
-              <button
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="btn btn-danger btn-xs"
-              >
-                {isDeleting ? "Deleting..." : "Yes, delete"}
-              </button>
+            <div className="flex items-center gap-2 w-full">
+              <p className="text-[12px] text-danger flex-1">
+                This action cannot be undone.
+              </p>
               <button
                 onClick={() => setConfirmDelete(false)}
                 className="btn btn-secondary btn-xs"
               >
                 Cancel
               </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="btn btn-danger btn-xs"
+              >
+                {isDeleting ? "Deleting..." : "Delete"}
+              </button>
             </div>
           ) : (
-            <button
-              onClick={() => setConfirmDelete(true)}
-              className="btn btn-danger btn-sm"
-            >
-              <Trash2 size={13} />
-              Delete
-            </button>
-          )}
+            <>
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="btn btn-danger btn-sm"
+              >
+                <Trash2 size={13} />
+                Delete
+              </button>
 
-          <button
-            onClick={handleSave}
-            disabled={isUpdating || !hasChanges}
-            className="btn btn-primary btn-sm"
-          >
-            <Save size={13} />
-            {isUpdating ? "Saving..." : "Save"}
-          </button>
+              <button
+                onClick={handleSave}
+                disabled={isUpdating || !hasChanges}
+                className="btn btn-primary btn-sm tooltip tooltip-down"
+                data-tip={!hasChanges ? "No changes to save" : ""}
+              >
+                <Save size={13} />
+                {isUpdating ? "Saving..." : "Save"}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
