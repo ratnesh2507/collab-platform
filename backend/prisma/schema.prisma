@@ -17,12 +17,12 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  ownedProjects   Project[]
-  memberOf        ProjectMember[]
-  assignedTasks   Task[]          @relation("AssignedTo")
-  createdTasks    Task[]          @relation("CreatedBy")
-  activityLogs    ActivityLog[]
-  notifications   Notification[]
+  ownedProjects Project[]
+  memberOf      ProjectMember[]
+  assignedTasks Task[]          @relation("AssignedTo")
+  createdTasks  Task[]          @relation("CreatedBy")
+  activityLogs  ActivityLog[]
+  notifications Notification[]
 }
 
 model Project {
@@ -32,7 +32,7 @@ model Project {
   tags        String[]
   inviteToken String   @unique @default(cuid())
   createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  updatedAt   DateTime @updatedAt  // ← added
 
   ownerId  String
   owner    User            @relation(fields: [ownerId], references: [id])
@@ -42,13 +42,13 @@ model Project {
 }
 
 model ProjectMember {
-  id        String   @id @default(cuid())
-  role      Role     @default(MEMBER)
-  joinedAt  DateTime @default(now())
+  id       String   @id @default(cuid())
+  role     Role     @default(MEMBER)
+  joinedAt DateTime @default(now())
 
   userId    String
   projectId String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([userId, projectId])
@@ -64,6 +64,7 @@ model Column {
   name      String
   order     Int
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -82,7 +83,7 @@ model Task {
   columnId   String
   column     Column  @relation(fields: [columnId], references: [id], onDelete: Cascade)
   assigneeId String?
-  assignee   User?   @relation("AssignedTo", fields: [assigneeId], references: [id])
+  assignee   User?   @relation("AssignedTo", fields: [assigneeId], references: [id], onDelete: SetNull)
   creatorId  String
   creator    User    @relation("CreatedBy", fields: [creatorId], references: [id])
 }
@@ -101,7 +102,7 @@ model ActivityLog {
 
   userId    String
   projectId String
-  user      User    @relation(fields: [userId], references: [id])
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
@@ -112,5 +113,5 @@ model Notification {
   createdAt DateTime @default(now())
 
   userId String
-  user   User   @relation(fields: [userId], references: [id])
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
