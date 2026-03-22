@@ -1,16 +1,16 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { GitBranch, LogOut, ArrowLeft } from "lucide-react";
-import { Activity } from "lucide-react";
+import { GitBranch, LogOut, ArrowLeft, Activity } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useBoard, useMoveTask } from "../hooks/useTasks";
+import { useAuthStore } from "../store/authStore";
 import api from "../lib/api";
 import type { Task } from "../types";
 import BoardColumn from "../components/board/BoardColumn";
 import TaskDetailPanel from "../components/board/TaskDetailPanel";
 import NotificationBell from "../components/ui/NotificationBell";
 import ActivityFeed from "../components/board/ActivityFeed";
-import { connectSocket, disconnectSocket, getSocket } from "../lib/socket";
+import { connectSocket, getSocket } from "../lib/socket";
 import {
   DndContext,
   type DragEndEvent,
@@ -25,6 +25,7 @@ import {
 export default function Board() {
   const { projectId } = useParams<{ projectId: string }>();
   const { user } = useAuth();
+  const { reset } = useAuthStore();
   const navigate = useNavigate();
   const { data: project, isLoading, refetch } = useBoard(projectId!);
   const { mutateAsync: moveTask } = useMoveTask(projectId!);
@@ -52,6 +53,8 @@ export default function Board() {
     socket.on("user-left", () => setOnlineCount((c) => Math.max(1, c - 1)));
 
     return () => {
+      // Leave project room but don't disconnect —
+      // socket is still needed for notifications on other pages
       socket.emit("leave-project", projectId);
       socket.off("task-created");
       socket.off("task-updated");
@@ -59,13 +62,13 @@ export default function Board() {
       socket.off("task-moved");
       socket.off("user-joined");
       socket.off("user-left");
-      disconnectSocket();
     };
   }, [projectId]);
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
-    window.location.href = "/";
+    reset();
+    navigate("/");
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -153,32 +156,27 @@ export default function Board() {
     <div className="min-h-screen bg-bg flex flex-col">
       {/* Navbar */}
       <nav className="navbar shrink-0">
-        <div className="flex items-center gap-3">
+        {/* Left — navigation + project identity */}
+        <div className="flex items-center gap-2">
           <button
             onClick={() => navigate("/dashboard")}
-            className="btn-icon tooltip"
-            data-tip="Back"
+            className="btn-icon tooltip tooltip-down"
+            data-tip="Back to dashboard"
           >
             <ArrowLeft size={15} />
           </button>
-          <button
-            onClick={() => setShowActivity(true)}
-            className="btn-icon tooltip"
-            data-tip="Activity feed"
-          >
-            <Activity size={15} />
-          </button>
 
-          <NotificationBell />
           <div className="divider-solid w-px h-5" />
-          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-linear-to-br from-primary to-accent-dim">
+
+          <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-linear-to-br from-primary to-accent-dim shrink-0">
             <GitBranch size={13} color="white" />
           </div>
           <span className="font-semibold text-[15px] text-ink">
             {project.name}
           </span>
+
           {project.tags.length > 0 && (
-            <div className="hidden md:flex gap-1.5">
+            <div className="hidden md:flex gap-1.5 ml-1">
               {project.tags.map((tag) => (
                 <span key={tag} className="tag">
                   {tag}
@@ -188,14 +186,15 @@ export default function Board() {
           )}
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Online indicator */}
-          <div className="hidden md:flex items-center gap-1.5 text-[12px] text-ink-dim">
-            <span className="online-dot" style={{ width: 7, height: 7 }} />
+        {/* Right — presence + actions */}
+        <div className="flex items-center gap-2">
+          {/* Online count */}
+          <div className="hidden md:flex items-center gap-1.5 text-[12px] text-ink-dim mr-1">
+            <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
             {onlineCount} online
           </div>
 
-          {/* Member avatars */}
+          {/* Stacked member avatars */}
           <div className="hidden md:flex items-center">
             {project.members.slice(0, 4).map((m, i) => (
               <img
@@ -205,15 +204,30 @@ export default function Board() {
                 width={26}
                 height={26}
                 referrerPolicy="no-referrer"
-                className="avatar border-2 border-bg"
-                style={{ width: 26, height: 26, marginLeft: i > 0 ? -8 : 0 }}
+                className="avatar w-6.5 h-6.5 border-2 border-bg"
+                style={{ marginLeft: i > 0 ? -8 : 0 }}
                 title={m.user.name}
               />
             ))}
           </div>
 
-          <div className="divider-solid w-px h-5" />
+          <div className="divider-solid w-px h-5 mx-1" />
 
+          {/* Activity feed */}
+          <button
+            onClick={() => setShowActivity(true)}
+            className="btn-icon tooltip tooltip-down"
+            data-tip="Activity feed"
+          >
+            <Activity size={15} />
+          </button>
+
+          {/* Notifications */}
+          <NotificationBell />
+
+          <div className="divider-solid w-px h-5 mx-1" />
+
+          {/* User avatar */}
           {user && (
             <div className="relative w-7 h-7 shrink-0">
               <img
@@ -228,11 +242,10 @@ export default function Board() {
             </div>
           )}
 
-          <div className="divider-solid w-px h-5" />
-
+          {/* Logout */}
           <button
             onClick={handleLogout}
-            className="btn-icon tooltip"
+            className="btn-icon tooltip tooltip-down"
             data-tip="Sign out"
           >
             <LogOut size={15} />
@@ -259,11 +272,11 @@ export default function Board() {
           ))}
         </div>
 
-        {/* Drag overlay — shows a ghost of the card while dragging */}
+        {/* Drag overlay */}
         <DragOverlay>
           {activeTask ? (
-            <div className="task-card flex flex-col gap-2.5 opacity-90 shadow-lg rotate-1">
-              <p className="text-[13px] text-ink-mid leading-snug">
+            <div className="task-card flex flex-col gap-2 opacity-90 shadow-lg rotate-1">
+              <p className="text-[13px] text-ink font-medium leading-snug">
                 {activeTask.title}
               </p>
               <span
@@ -285,7 +298,8 @@ export default function Board() {
           onClose={() => setSelectedTask(null)}
         />
       )}
-      {/* Activity Feed */}
+
+      {/* Activity feed */}
       {showActivity && (
         <ActivityFeed
           projectId={project.id}

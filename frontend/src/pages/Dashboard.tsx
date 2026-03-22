@@ -8,19 +8,31 @@ import CreateProjectModal from "../components/projects/CreateProjectModal";
 import ProjectCard from "../components/projects/ProjectCard";
 import NotificationBell from "../components/ui/NotificationBell";
 import { connectSocket } from "../lib/socket";
+import { useAuthStore } from "../store/authStore";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
+  const { reset } = useAuthStore();
   const { data: projects, isLoading: projectsLoading } = useProjects();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
 
+  // Connect socket when user is available
   useEffect(() => {
     if (user?.id) connectSocket(user.id);
   }, [user?.id]);
+
+  // Redirect to landing if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/");
+    }
+  }, [authLoading, user, navigate]);
+
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
-    window.location.href = "/";
+    reset();
+    navigate("/");
   };
 
   if (authLoading) {
@@ -39,10 +51,7 @@ export default function Dashboard() {
     );
   }
 
-  if (!user) {
-    navigate("/");
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-bg">
@@ -75,12 +84,13 @@ export default function Dashboard() {
               {user.username}
             </span>
           </div>
+
           <NotificationBell />
           <div className="divider-solid w-px h-5" />
 
           <button
             onClick={handleLogout}
-            className="btn-icon tooltip"
+            className="btn-icon tooltip tooltip-down"
             data-tip="Sign out"
           >
             <LogOut size={15} />

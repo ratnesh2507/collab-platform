@@ -1,4 +1,9 @@
-import type { TaskPriority } from "../hooks/useTasks";
+// ── Shared primitive types ──────────────────────────────
+
+export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+
+// ── Entity interfaces ───────────────────────────────────
+
 export interface User {
   id: string;
   githubId: string;
@@ -19,6 +24,7 @@ export interface Column {
 export interface ProjectMember {
   id: string;
   role: "OWNER" | "MEMBER";
+  joinedAt: string;
   user: User;
 }
 
@@ -49,6 +55,8 @@ export interface Task {
   createdAt: string;
   updatedAt: string;
 }
+
+// ── Composed interfaces ─────────────────────────────────
 
 export interface ColumnWithTasks extends Column {
   tasks: Task[];

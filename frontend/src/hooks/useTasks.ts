@@ -1,8 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { ProjectWithColumns, Task } from "../types";
-
-export type TaskPriority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+import type { ProjectWithColumns, Task, TaskPriority } from "../types";
 
 export type CreateTaskInput = {
   title: string;

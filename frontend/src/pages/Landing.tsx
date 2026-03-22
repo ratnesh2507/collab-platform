@@ -14,20 +14,44 @@ const GitHubIcon = () => (
   </svg>
 );
 
+const features = [
+  {
+    dot: "bg-primary",
+    label: "Kanban Boards",
+    desc: "Drag & drop tasks across workflow stages",
+  },
+  {
+    dot: "bg-accent",
+    label: "Real-time",
+    desc: "Live updates sync instantly for everyone",
+  },
+  {
+    dot: "bg-success",
+    label: "Team Collab",
+    desc: "Invite teammates via shareable links",
+  },
+];
+
 export default function Landing() {
   return (
     <main className="min-h-screen bg-bg flex flex-col items-center justify-center px-6 relative overflow-hidden">
       {/* Subtle top glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-75 bg-primary-dim rounded-full blur-[120px] opacity-10 pointer-events-none" />
+      <div
+        className="absolute top-0 left-1/2 -translate-x-1/2 pointer-events-none opacity-10 rounded-full"
+        style={{
+          width: "600px",
+          height: "300px",
+          background: "var(--color-primary-dim)",
+          filter: "blur(120px)",
+        }}
+      />
 
       {/* Content */}
       <div className="relative z-10 flex flex-col items-center text-center max-w-xl w-full fade-in">
         {/* Logo */}
         <div className="flex items-center gap-2.5 mb-10">
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-primary to-accent-dim flex items-center justify-center shrink-0">
-            <span className="text-white font-bold text-[11px] tracking-tight">
-              <GitBranch size={15} color="white" />
-            </span>
+            <GitBranch size={15} color="white" />
           </div>
           <span className="font-semibold text-[16px] text-ink">
             BranchBoard
@@ -52,43 +76,28 @@ export default function Landing() {
         {/* CTA */}
         <a
           href={`${BACKEND_URL}/api/auth/github`}
-          className="btn btn-primary btn-lg w-full max-w-xs justify-center"
+          className="btn btn-primary btn-lg w-full max-w-sm justify-center"
         >
           <GitHubIcon />
           Continue with GitHub
         </a>
-        <p className="text-md text-ink-ghost mt-3 mb-8">
+        <p className="text-sm text-ink-ghost mt-3 mb-8">
           Free to use · No credit card required
         </p>
 
         {/* Feature cards */}
-        <div className="grid grid-cols-3 gap-3 w-full max-w-xl mt-10">
-          {[
-            {
-              dot: "bg-primary",
-              label: "Kanban Boards",
-              desc: "Drag & drop tasks across workflow stages",
-            },
-            {
-              dot: "bg-accent",
-              label: "Real-time",
-              desc: "Live updates sync instantly for everyone",
-            },
-            {
-              dot: "bg-success",
-              label: "Team Collab",
-              desc: "Invite teammates via shareable links",
-            },
-          ].map((f) => (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full max-w-xl mt-10">
+          {features.map((f) => (
             <div key={f.label} className="card-md p-4 flex flex-col gap-3">
-              <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full shrink-0 ${f.dot}`} />
                 <span className="text-[13px] font-semibold text-ink">
                   {f.label}
                 </span>
-                <span className="text-[12px] text-ink-dim leading-relaxed">
-                  {f.desc}
-                </span>
               </div>
+              <span className="text-[12px] text-ink-dim leading-relaxed text-left">
+                {f.desc}
+              </span>
             </div>
           ))}
         </div>
