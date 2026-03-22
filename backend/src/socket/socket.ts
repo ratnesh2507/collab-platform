@@ -1,12 +1,39 @@
 import { Server, Socket } from "socket.io";
 import { prisma } from "../lib/prisma";
 
+const isDev = process.env.NODE_ENV !== "production";
+
+// Typed event payloads
+interface TaskEventPayload {
+  projectId: string;
+  task: {
+    id: string;
+    title: string;
+    assigneeId: string | null;
+  };
+}
+
+interface TaskDeletedPayload {
+  projectId: string;
+  taskId: string;
+}
+
+interface TaskMovedPayload {
+  projectId: string;
+  taskId: string;
+  columnId: string;
+  order: number;
+}
+
 export function setupSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
-    console.log("Client connected:", socket.id);
+    if (isDev) console.log("Client connected:", socket.id);
 
+    // Join personal notification room
     socket.on("join-user", (userId: string) => {
-      socket.join(`user:${userId}`);
+      if (typeof userId === "string" && userId.length > 0) {
+        socket.join(`user:${userId}`);
+      }
     });
 
     // Join a project room
@@ -22,44 +49,48 @@ export function setupSocket(io: Server) {
     });
 
     // Task created
-    socket.on("task-created", ({ projectId, task }: any) => {
+    socket.on("task-created", ({ projectId, task }: TaskEventPayload) => {
       socket.to(projectId).emit("task-created", task);
-      // Notify assignee if assigned
       if (task.assigneeId) {
-        notifyAssignee(io, task, projectId, "assigned");
+        notifyAssignee(io, task, "assigned");
       }
     });
 
-    // Task updated
-    socket.on("task-updated", ({ projectId, task }: any) => {
+    // Task updated — only notify if assignee is set
+    // Note: fires on every update but assignee may not have changed
+    socket.on("task-updated", ({ projectId, task }: TaskEventPayload) => {
       socket.to(projectId).emit("task-updated", task);
       if (task.assigneeId) {
-        notifyAssignee(io, task, projectId, "assigned");
+        notifyAssignee(io, task, "assigned");
       }
     });
 
     // Task deleted
-    socket.on("task-deleted", ({ projectId, taskId }: any) => {
+    socket.on("task-deleted", ({ projectId, taskId }: TaskDeletedPayload) => {
       socket.to(projectId).emit("task-deleted", taskId);
     });
 
     // Task moved
-    socket.on("task-moved", ({ projectId, taskId, columnId, order }: any) => {
-      socket.to(projectId).emit("task-moved", { taskId, columnId, order });
-    });
+    socket.on(
+      "task-moved",
+      ({ projectId, taskId, columnId, order }: TaskMovedPayload) => {
+        socket.to(projectId).emit("task-moved", { taskId, columnId, order });
+      },
+    );
 
     socket.on("disconnect", () => {
-      console.log("Client disconnected:", socket.id);
+      if (isDev) console.log("Client disconnected:", socket.id);
     });
   });
 }
 
 async function notifyAssignee(
   io: Server,
-  task: any,
-  projectId: string,
+  task: { id: string; title: string; assigneeId: string | null },
   type: string,
 ) {
+  if (!task.assigneeId) return;
+
   try {
     const notification = await prisma.notification.create({
       data: {

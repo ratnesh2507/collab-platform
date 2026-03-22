@@ -12,21 +12,27 @@ import notificationRoutes, {
 } from "./routes/notification.routes";
 import { setupSocket } from "./socket/socket";
 
+// Load env vars first before any other imports that use them
 dotenv.config();
+
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const PORT = process.env.PORT || 5000;
+const isDev = process.env.NODE_ENV !== "production";
 
 const app = express();
 const httpServer = createServer(app);
 
 const io = new Server(httpServer, {
   cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: FRONTEND_URL,
     credentials: true,
   },
 });
 
+// Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
+    origin: FRONTEND_URL,
     credentials: true,
   }),
 );
@@ -40,15 +46,39 @@ app.use("/api/projects/:projectId/tasks", taskRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/projects/:projectId/activity", activityRouter);
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+// Health check — verifies DB connectivity for Railway
+app.get("/health", async (req, res) => {
+  try {
+    const { prisma } = await import("./lib/prisma");
+    await prisma.$queryRaw`SELECT 1`;
+    res.json({ status: "ok", db: "connected" });
+  } catch {
+    res.status(503).json({ status: "error", db: "disconnected" });
+  }
+});
+
+// Global error handler — catches any unhandled Express errors
+app.use(
+  (
+    err: Error,
+    req: express.Request,
+    res: express.Response,
+    next: express.NextFunction,
+  ) => {
+    console.error("Unhandled error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  },
+);
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (reason) => {
+  console.error("Unhandled rejection:", reason);
 });
 
 setupSocket(io);
 
-const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}${isDev ? ` (dev)` : ""}`);
 });
 
 export { io };

@@ -18,12 +18,15 @@ export function authenticate(
     return;
   }
 
-  try {
-    const payload = verifyToken(token);
-    req.userId = payload.userId;
-    req.username = payload.username;
-    next();
-  } catch {
+  // verifyToken returns null on invalid/expired token instead of throwing
+  const payload = verifyToken(token);
+
+  if (!payload || !payload.userId) {
     res.status(401).json({ error: "Invalid token" });
+    return;
   }
+
+  req.userId = payload.userId;
+  req.username = payload.username;
+  next();
 }
