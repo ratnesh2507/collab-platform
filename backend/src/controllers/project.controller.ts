@@ -16,6 +16,17 @@ const updateProjectSchema = z.object({
   tags: z.array(z.string()).max(5).optional(),
 });
 
+// Reusable user select — never expose updatedAt or sensitive fields
+const userSelect = {
+  id: true,
+  githubId: true,
+  username: true,
+  name: true,
+  email: true,
+  avatar: true,
+  createdAt: true,
+};
+
 export async function createProject(
   req: AuthRequest,
   res: Response,
@@ -52,7 +63,7 @@ export async function createProject(
         },
       },
       include: {
-        members: { include: { user: true } },
+        members: { include: { user: { select: userSelect } } },
         columns: true,
       },
     });
@@ -78,7 +89,7 @@ export async function getProjects(
         },
       },
       include: {
-        members: { include: { user: true } },
+        members: { include: { user: { select: userSelect } } },
         _count: { select: { columns: true } },
       },
       orderBy: { createdAt: "desc" },
@@ -95,9 +106,8 @@ export async function getProject(
 ): Promise<void> {
   const userId: string = req.userId!;
   let { projectId } = req.params;
-  if (Array.isArray(projectId)) {
-    projectId = projectId[0];
-  }
+  if (Array.isArray(projectId)) projectId = projectId[0];
+
   try {
     const project = await prisma.project.findFirst({
       where: {
@@ -109,25 +119,27 @@ export async function getProject(
         },
       },
       include: {
-        members: { include: { user: true } },
+        members: { include: { user: { select: userSelect } } },
         columns: {
           orderBy: { order: "asc" },
           include: {
             tasks: {
               orderBy: { order: "asc" },
               include: {
-                assignee: true,
-                creator: true,
+                assignee: { select: userSelect },
+                creator: { select: userSelect },
               },
             },
           },
         },
       },
     });
+
     if (!project) {
       res.status(404).json({ error: "Project not found" });
       return;
     }
+
     res.json(project);
   } catch {
     res.status(500).json({ error: "Failed to fetch project" });
@@ -139,9 +151,7 @@ export async function joinProject(
   res: Response,
 ): Promise<void> {
   let { inviteToken } = req.params;
-  if (Array.isArray(inviteToken)) {
-    inviteToken = inviteToken[0];
-  }
+  if (Array.isArray(inviteToken)) inviteToken = inviteToken[0];
 
   try {
     const project = await prisma.project.findUnique({
@@ -176,20 +186,28 @@ export async function joinProject(
       },
     });
 
+    // Log join activity
+    await prisma.activityLog.create({
+      data: {
+        userId: req.userId!,
+        projectId: project.id,
+        action: "joined the project",
+      },
+    });
+
     res.json({ message: "Joined successfully", projectId: project.id });
   } catch {
     res.status(500).json({ error: "Failed to join project" });
   }
 }
+
 export async function updateProject(
   req: AuthRequest,
   res: Response,
 ): Promise<void> {
   const userId = req.userId as string;
   let { projectId } = req.params;
-  if (Array.isArray(projectId)) {
-    projectId = projectId[0];
-  }
+  if (Array.isArray(projectId)) projectId = projectId[0];
 
   const parsed = updateProjectSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -219,6 +237,14 @@ export async function updateProject(
       },
     });
 
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        projectId,
+        action: `updated project details`,
+      },
+    });
+
     res.json(updated);
   } catch {
     res.status(500).json({ error: "Failed to update project" });
@@ -231,9 +257,7 @@ export async function deleteProject(
 ): Promise<void> {
   const userId = req.userId as string;
   let { projectId } = req.params;
-  if (Array.isArray(projectId)) {
-    projectId = projectId[0];
-  }
+  if (Array.isArray(projectId)) projectId = projectId[0];
 
   try {
     // Only owner can delete

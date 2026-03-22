@@ -2,7 +2,6 @@ import { Response } from "express";
 import { prisma } from "../lib/prisma";
 import { AuthRequest } from "../middleware/auth.middleware";
 import { z } from "zod";
-import type { Prisma } from "../generated/prisma/client";
 
 const createTaskSchema = z.object({
   title: z.string().min(1).max(100),
@@ -24,15 +23,24 @@ const moveTaskSchema = z.object({
   order: z.number().int().min(0),
 });
 
+// Reusable user select
+const userSelect = {
+  id: true,
+  githubId: true,
+  username: true,
+  name: true,
+  email: true,
+  avatar: true,
+  createdAt: true,
+};
+
 // Helper to verify user is a member of the project
 async function verifyProjectMember(
   userId: string,
   projectId: string,
 ): Promise<boolean> {
   const member = await prisma.projectMember.findUnique({
-    where: {
-      userId_projectId: { userId, projectId },
-    },
+    where: { userId_projectId: { userId, projectId } },
   });
   return !!member;
 }
@@ -50,15 +58,15 @@ export async function createTask(
     return;
   }
 
-  const isMember = await verifyProjectMember(userId, projectId);
-  if (!isMember) {
-    res.status(403).json({ error: "Not a member of this project" });
-    return;
-  }
-
   const { title, description, priority, assigneeId, columnId } = parsed.data;
 
   try {
+    const isMember = await verifyProjectMember(userId, projectId);
+    if (!isMember) {
+      res.status(403).json({ error: "Not a member of this project" });
+      return;
+    }
+
     // Get the highest order in the column
     const lastTask = await prisma.task.findFirst({
       where: { columnId },
@@ -77,18 +85,13 @@ export async function createTask(
         creatorId: userId,
       },
       include: {
-        assignee: true,
-        creator: true,
+        assignee: { select: userSelect },
+        creator: { select: userSelect },
       },
     });
 
-    // Log activity
     await prisma.activityLog.create({
-      data: {
-        userId,
-        projectId,
-        action: `created task "${title}"`,
-      },
+      data: { userId, projectId, action: `created task "${title}"` },
     });
 
     res.status(201).json(task);
@@ -111,15 +114,22 @@ export async function updateTask(
     return;
   }
 
-  const isMember = await verifyProjectMember(userId, projectId);
-  if (!isMember) {
-    res.status(403).json({ error: "Not a member of this project" });
-    return;
-  }
-
   const { title, description, priority, assigneeId } = parsed.data;
 
   try {
+    const isMember = await verifyProjectMember(userId, projectId);
+    if (!isMember) {
+      res.status(403).json({ error: "Not a member of this project" });
+      return;
+    }
+
+    // Check task exists
+    const existing = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!existing) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
     const task = await prisma.task.update({
       where: { id: taskId },
       data: {
@@ -129,17 +139,13 @@ export async function updateTask(
         ...(assigneeId !== undefined && { assigneeId: assigneeId ?? null }),
       },
       include: {
-        assignee: true,
-        creator: true,
+        assignee: { select: userSelect },
+        creator: { select: userSelect },
       },
     });
 
     await prisma.activityLog.create({
-      data: {
-        userId,
-        projectId,
-        action: `updated task "${task.title}"`,
-      },
+      data: { userId, projectId, action: `updated task "${task.title}"` },
     });
 
     res.json(task);
@@ -156,23 +162,24 @@ export async function deleteTask(
   const projectId = req.params.projectId as string;
   const taskId = req.params.taskId as string;
 
-  const isMember = await verifyProjectMember(userId, projectId);
-  if (!isMember) {
-    res.status(403).json({ error: "Not a member of this project" });
-    return;
-  }
-
   try {
-    const task = await prisma.task.delete({
-      where: { id: taskId },
-    });
+    const isMember = await verifyProjectMember(userId, projectId);
+    if (!isMember) {
+      res.status(403).json({ error: "Not a member of this project" });
+      return;
+    }
+
+    // Check task exists
+    const existing = await prisma.task.findUnique({ where: { id: taskId } });
+    if (!existing) {
+      res.status(404).json({ error: "Task not found" });
+      return;
+    }
+
+    await prisma.task.delete({ where: { id: taskId } });
 
     await prisma.activityLog.create({
-      data: {
-        userId,
-        projectId,
-        action: `deleted task "${task.title}"`,
-      },
+      data: { userId, projectId, action: `deleted task "${existing.title}"` },
     });
 
     res.json({ message: "Task deleted" });
@@ -194,31 +201,30 @@ export async function moveTask(req: AuthRequest, res: Response): Promise<void> {
     return;
   }
 
-  const isMember = await verifyProjectMember(userId, projectId);
-  if (!isMember) {
-    res.status(403).json({ error: "Not a member of this project" });
-    return;
-  }
-
   const { columnId, order } = parsed.data;
 
   try {
+    const isMember = await verifyProjectMember(userId, projectId);
+    if (!isMember) {
+      res.status(403).json({ error: "Not a member of this project" });
+      return;
+    }
+
     const task = await prisma.task.update({
       where: { id: taskId },
       data: { columnId, order },
-      include: { assignee: true, creator: true },
-    });
-
-    // Get column name for activity log
-    const column = await prisma.column.findUnique({
-      where: { id: columnId },
+      include: {
+        assignee: { select: userSelect },
+        creator: { select: userSelect },
+        column: { select: { name: true } }, // get column name in same query
+      },
     });
 
     await prisma.activityLog.create({
       data: {
         userId,
         projectId,
-        action: `moved task "${task.title}" to ${column?.name ?? "a column"}`,
+        action: `moved task "${task.title}" to ${task.column.name}`,
       },
     });
 

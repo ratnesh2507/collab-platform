@@ -11,8 +11,9 @@ const router = Router();
 router.use(authenticate);
 
 router.get("/", getNotifications);
-router.patch("/:id/read", markAsRead);
+// Static route before dynamic to avoid any potential Express matching ambiguity
 router.patch("/read-all", markAllAsRead);
+router.patch("/:id/read", markAsRead);
 
 export default router;
 
