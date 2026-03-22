@@ -657,6 +657,9 @@ select.input option {
   flex-shrink: 0;
 }
 
+.modal-tall {
+  max-height: min(680px, calc(100vh - 48px));
+}
 /* ──────────────────────────────
    SIDE PANELS
 ────────────────────────────── */

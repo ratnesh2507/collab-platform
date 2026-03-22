@@ -31,3 +31,38 @@ export function useCreateProject() {
     },
   });
 }
+
+export type UpdateProjectInput = {
+  name?: string;
+  description?: string | null;
+  tags?: string[];
+};
+
+export function useUpdateProject() {
+  const queryClient = useQueryClient();
+  return useMutation<
+    Project,
+    Error,
+    { projectId: string; data: UpdateProjectInput }
+  >({
+    mutationFn: async ({ projectId, data }) => {
+      const res = await api.patch(`/api/projects/${projectId}`, data);
+      return res.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}
+
+export function useDeleteProject() {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string>({
+    mutationFn: async (projectId: string) => {
+      await api.delete(`/api/projects/${projectId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["projects"] });
+    },
+  });
+}

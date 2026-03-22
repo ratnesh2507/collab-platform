@@ -10,6 +10,12 @@ const createProjectSchema = z.object({
   tags: z.array(z.string()).max(5).optional().default([]),
 });
 
+const updateProjectSchema = z.object({
+  name: z.string().min(1).max(50).optional(),
+  description: z.string().max(500).optional().nullable(),
+  tags: z.array(z.string()).max(5).optional(),
+});
+
 export async function createProject(
   req: AuthRequest,
   res: Response,
@@ -173,5 +179,77 @@ export async function joinProject(
     res.json({ message: "Joined successfully", projectId: project.id });
   } catch {
     res.status(500).json({ error: "Failed to join project" });
+  }
+}
+export async function updateProject(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  const userId = req.userId as string;
+  let { projectId } = req.params;
+  if (Array.isArray(projectId)) {
+    projectId = projectId[0];
+  }
+
+  const parsed = updateProjectSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  try {
+    // Only owner can update
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, ownerId: userId },
+    });
+
+    if (!project) {
+      res.status(403).json({ error: "Only the project owner can edit it" });
+      return;
+    }
+
+    const { name, description, tags } = parsed.data;
+
+    const updated = await prisma.project.update({
+      where: { id: projectId },
+      data: {
+        ...(name && { name }),
+        ...(description !== undefined && { description: description ?? null }),
+        ...(tags && { tags: { set: tags } }),
+      },
+    });
+
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Failed to update project" });
+  }
+}
+
+export async function deleteProject(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  const userId = req.userId as string;
+  let { projectId } = req.params;
+  if (Array.isArray(projectId)) {
+    projectId = projectId[0];
+  }
+
+  try {
+    // Only owner can delete
+    const project = await prisma.project.findFirst({
+      where: { id: projectId, ownerId: userId },
+    });
+
+    if (!project) {
+      res.status(403).json({ error: "Only the project owner can delete it" });
+      return;
+    }
+
+    await prisma.project.delete({ where: { id: projectId } });
+
+    res.json({ message: "Project deleted" });
+  } catch {
+    res.status(500).json({ error: "Failed to delete project" });
   }
 }

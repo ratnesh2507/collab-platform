@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { GitBranch, LogOut, ArrowLeft, Activity } from "lucide-react";
+import { Settings } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
 import { useBoard, useMoveTask } from "../hooks/useTasks";
 import { useAuthStore } from "../store/authStore";
@@ -8,6 +9,7 @@ import api from "../lib/api";
 import type { Task } from "../types";
 import BoardColumn from "../components/board/BoardColumn";
 import TaskDetailPanel from "../components/board/TaskDetailPanel";
+import ProjectSettingsModal from "../components/projects/ProjectSettingsModal";
 import NotificationBell from "../components/ui/NotificationBell";
 import ActivityFeed from "../components/board/ActivityFeed";
 import { connectSocket, getSocket } from "../lib/socket";
@@ -33,6 +35,7 @@ export default function Board() {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showActivity, setShowActivity] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -151,6 +154,7 @@ export default function Board() {
   }
 
   if (!project) return null;
+  const isOwner = project.ownerId === user?.id;
 
   return (
     <div className="min-h-screen bg-bg flex flex-col">
@@ -183,6 +187,15 @@ export default function Board() {
                 </span>
               ))}
             </div>
+          )}
+          {isOwner && (
+            <button
+              onClick={() => setShowSettings(true)}
+              className="btn-icon tooltip tooltip-down"
+              data-tip="Project settings"
+            >
+              <Settings size={14} />
+            </button>
           )}
         </div>
 
@@ -304,6 +317,13 @@ export default function Board() {
         <ActivityFeed
           projectId={project.id}
           onClose={() => setShowActivity(false)}
+        />
+      )}
+      {/* Project Settings modal */}
+      {showSettings && (
+        <ProjectSettingsModal
+          project={project}
+          onClose={() => setShowSettings(false)}
         />
       )}
     </div>
