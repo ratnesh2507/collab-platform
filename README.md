@@ -2,16 +2,46 @@
 
 > A real-time developer collaboration platform. Kanban boards, team collaboration, and live updates — built for developers.
 
+## 🌐 Live Demo
+
+- Frontend: https://collab-platform-beta.vercel.app/
+- Backend API: https://branchboard.onrender.com/
+
+## 📸 Screenshots
+
+| Dashboard                            | Board                            |
+| ------------------------------------ | -------------------------------- |
+| ![](./frontend/public/dashboard.png) | ![](./frontend/public/board.png) |
+
+| New Project                            | Task                                |
+| -------------------------------------- | ----------------------------------- |
+| ![](./frontend/public/new_project.png) | ![](./frontend/public/new_task.png) |
+
+| Edit Task                            | Activity Feed                            |
+| ------------------------------------ | ---------------------------------------- |
+| ![](./frontend/public/edit_task.png) | ![](./frontend/public/activity_feed.png) |
+
+| Notifications                            |
+| ---------------------------------------- |
+| ![](./frontend/public/notifications.png) |
+
 ## ✨ Features
 
-- **GitHub OAuth** — Sign in instantly with your GitHub account
-- **Project Management** — Create projects, invite teammates via shareable links
-- **Kanban Boards** — 4-column workflow: Backlog → In Progress → In Review → Done
-- **Task Management** — Create, edit, delete, and assign tasks with priority labels
-- **Drag & Drop** — Reorder and move tasks between columns with persistence
-- **Real-time Sync** — All board changes sync instantly for every team member via Socket.IO
-- **Online Presence** — See how many teammates are active on the board
-- **Activity Logging** — Every action is logged automatically
+- GitHub OAuth — Sign in instantly with your GitHub account
+- Project Management — Create projects, invite teammates via shareable links
+- Kanban Boards — Backlog → In Progress → In Review → Done
+- Task Management — Create, edit, delete, assign tasks with priority levels
+- Drag & Drop — Reorder and move tasks between columns with persistence
+- Real-time Sync — Instant updates via Socket.IO
+- Online Presence — Track active users on a board
+- Activity Logging — Automatic tracking of all actions
+
+## 🚀 Highlights
+
+- Real-time collaboration using WebSockets
+- Scalable architecture with separated frontend/backend
+- Cloud deployment with connection pooling
+- Secure authentication using httpOnly cookies
 
 ## 🛠 Tech Stack
 
@@ -40,6 +70,20 @@
 | JWT + httpOnly cookies | Authentication |
 | Zod                    | Validation     |
 
+## 🏗 Architecture
+
+```
+Frontend (Vercel)
+↓
+Backend (Render)
+↓
+Supabase (PostgreSQL)
+```
+
+- Backend handles authentication and authorization
+- Supabase is used as a managed PostgreSQL database (no direct client access)
+- Socket.IO enables real-time collaboration
+
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -64,14 +108,14 @@ npm install
 Create `backend/.env`:
 
 ```env
-DATABASE_URL="prisma+postgres://localhost:51213/?api_key=YOUR_KEY"
-DIRECT_URL="postgres://postgres:postgres@localhost:51214/template1?sslmode=disable"
-JWT_SECRET=your_random_secret
+DATABASE_URL=your_supabase_pooled_url
+DIRECT_URL=your_supabase_direct_url
+JWT_SECRET=your_secret
 FRONTEND_URL=http://localhost:5173
 BACKEND_URL=http://localhost:5000
 PORT=5000
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
+GITHUB_CLIENT_ID=your_client_id
+GITHUB_CLIENT_SECRET=your_client_secret
 ```
 
 ### 3. Frontend setup
@@ -92,7 +136,7 @@ VITE_APP_URL=http://localhost:5173
 
 ```bash
 cd backend
-npx prisma migrate dev --name init
+npx prisma db push
 npx prisma generate
 ```
 
@@ -104,16 +148,13 @@ npx prisma generate
 
 ### 6. Run the project
 
-You need 3 terminals:
+You need 2 terminals:
 
 ```bash
-# Terminal 1 — Prisma DB (must start first)
-cd backend && npx prisma dev
-
-# Terminal 2 — Backend
+# Terminal 1 — Backend
 cd backend && npm run dev
 
-# Terminal 3 — Frontend
+# Terminal 2 — Frontend
 cd frontend && npm run dev
 ```
 

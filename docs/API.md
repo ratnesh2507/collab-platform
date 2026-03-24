@@ -1,6 +1,6 @@
 # BranchBoard API Reference
 
-Base URL: `http://localhost:5000`
+Base URL: `https://branchboard.onrender.com`
 
 All protected routes require a valid JWT stored in an httpOnly cookie named `token`.
 

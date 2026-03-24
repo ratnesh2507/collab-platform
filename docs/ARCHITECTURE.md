@@ -7,7 +7,7 @@ Monorepo with separate React frontend and Node.js backend.
 ```
 collab-platform/
 ├── frontend/   → React + Vite (Vercel)
-└── backend/    → Node + Express (Railway)
+└── backend/    → Node + Express (Render)
 ```
 
 ## Auth Flow
@@ -56,3 +56,13 @@ Notification  → id, message, read, userId, createdAt
 **httpOnly cookies for JWT** — XSS-safe. JavaScript cannot read the token. Combined with SameSite: lax for CSRF protection.
 
 **TanStack Query for server state** — handles caching, background refetch, loading states. Zustand only for client auth state.
+
+## Deployment Architecture
+
+Frontend (Vercel)
+→ Backend (Render)
+→ Supabase (PostgreSQL)
+
+- Render hosts a long-running Node.js server for Socket.IO
+- Supabase provides managed PostgreSQL with connection pooling
+- Prisma v7 uses adapter-based connection (pg pool)
