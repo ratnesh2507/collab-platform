@@ -10,7 +10,10 @@ if (!DIRECT_URL) {
 }
 
 const adapter = new PrismaPg({
-  connectionString: DIRECT_URL,
+  connectionString:
+    process.env.NODE_ENV === "production"
+      ? process.env.DATABASE_URL // pooled (Render)
+      : process.env.DIRECT_URL, // local,
   max: 10,
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
