@@ -18,7 +18,6 @@ export default defineConfig([
       "react-hooks": reactHooks,
     },
     rules: {
-      ...reactHooks.rules,
       "react-hooks/rules-of-hooks": "error",
       "react-hooks/exhaustive-deps": "warn",
     },
