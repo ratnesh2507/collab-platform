@@ -1,6 +1,8 @@
 import { Router } from "express";
 import { githubCallback, getMe, logout } from "../controllers/auth.controller";
 import { authenticate } from "../middleware/auth.middleware";
+import { config } from "dotenv";
+config();
 
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
 const BACKEND_URL = process.env.BACKEND_URL;
