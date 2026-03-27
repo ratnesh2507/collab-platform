@@ -66,7 +66,7 @@ export default function Board() {
       socket.off("user-joined");
       socket.off("user-left");
     };
-  }, [projectId]);
+  }, [projectId, refetch, user?.id]);
 
   const handleLogout = async () => {
     await api.post("/api/auth/logout");
