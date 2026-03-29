@@ -26,6 +26,7 @@ export default function TaskDetailPanel({
   projectId,
   members,
   onClose,
+  currentUser,
 }: Props) {
   const { mutateAsync: updateTask, isPending: isUpdating } =
     useUpdateTask(projectId);

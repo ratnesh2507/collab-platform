@@ -16,7 +16,7 @@ const priorityClass: Record<string, string> = {
   CRITICAL: "priority-critical",
 };
 
-export default function TaskCard({ task, onClick }: Props) {
+export default function TaskCard({ task, onClick, editingUser }: Props) {
   const {
     attributes,
     listeners,
