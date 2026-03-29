@@ -1,7 +1,6 @@
 import request from "supertest";
 import app from "../app";
 import { prisma } from "../lib/prisma";
-
 // Mock the prisma module
 jest.mock("../lib/prisma", () => require("../__mocks__/prisma"));
 

@@ -13,5 +13,11 @@
     "types": ["node", "jest"]
   },
   "include": ["src/**/*", "prisma.config.ts"],
-  "exclude": ["node_modules", "dist", "src/generated"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "src/generated",
+    "src/__mocks__",
+    "src/__tests__"
+  ]
 }
