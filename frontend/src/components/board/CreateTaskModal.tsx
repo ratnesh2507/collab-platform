@@ -3,6 +3,7 @@ import { X, Plus } from "lucide-react";
 import { useCreateTask } from "../../hooks/useTasks";
 import { getSocket } from "../../lib/socket";
 import type { ProjectMember } from "../../types";
+import RichTextEditor from "../ui/RichTextEditor";
 
 type Props = {
   projectId: string;
@@ -89,14 +90,15 @@ export default function CreateTaskModal({
           {/* Description */}
           <div className="form-group">
             <label className="form-label">Description</label>
-            <textarea
-              className="textarea"
-              placeholder="Add more details..."
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              maxLength={1000}
-              rows={3}
-            />
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <RichTextEditor
+                content={description}
+                onChange={setDescription}
+                placeholder="Add more details..."
+                members={members}
+              />
+            </div>
           </div>
 
           {/* Priority */}

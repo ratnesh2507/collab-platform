@@ -4,6 +4,7 @@ import type { Task, ProjectMember } from "../../types";
 import type { User as UserType } from "../../types";
 import { useUpdateTask, useDeleteTask } from "../../hooks/useTasks";
 import { getSocket } from "../../lib/socket";
+import RichTextEditor from "../ui/RichTextEditor";
 
 type Props = {
   task: Task;
@@ -48,6 +49,11 @@ export default function TaskDetailPanel({
     assigneeId !== (task.assigneeId ?? "");
 
   const handleSave = async () => {
+    // Extract @mentioned user IDs from the HTML
+    const mentionedIds = [...description.matchAll(/data-id="([^"]+)"/g)]
+      .map((m) => m[1])
+      .filter((id) => id !== currentUser.id); // don't notify yourself
+
     const updated = await updateTask({
       taskId: task.id,
       data: {
@@ -57,8 +63,23 @@ export default function TaskDetailPanel({
         assigneeId: assigneeId || null,
       },
     });
-    // Emit the updated task, not the stale original
+
     getSocket().emit("task-updated", { projectId, task: updated });
+
+    // Emit mention notifications
+    if (mentionedIds.length > 0) {
+      getSocket().emit("task-mention", {
+        projectId,
+        taskId: task.id,
+        taskTitle: updated.title,
+        mentionedIds,
+        mentionedBy: {
+          id: currentUser.id,
+          name: currentUser.name,
+        },
+      });
+    }
+
     onClose();
   };
 
@@ -137,14 +158,15 @@ export default function TaskDetailPanel({
           {/* Description */}
           <div className="form-group">
             <label className="form-label">Description</label>
-            <textarea
-              className="textarea"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Add a description..."
-              maxLength={1000}
-              rows={4}
-            />
+            <div className="form-group">
+              <label className="form-label">Description</label>
+              <RichTextEditor
+                content={description}
+                onChange={setDescription}
+                placeholder="Add a description..."
+                members={members}
+              />
+            </div>
           </div>
 
           {/* Priority */}

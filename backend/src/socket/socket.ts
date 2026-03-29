@@ -35,6 +35,14 @@ interface TaskEditingPayload {
   };
 }
 
+interface TaskMentionPayload {
+  projectId: string;
+  taskId: string;
+  taskTitle: string;
+  mentionedIds: string[];
+  mentionedBy: { id: string; name: string };
+}
+
 export function setupSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
     if (isDev) console.log("Client connected:", socket.id);
@@ -100,6 +108,31 @@ export function setupSocket(io: Server) {
       "task-editing-stop",
       ({ projectId, taskId, user }: TaskEditingPayload) => {
         socket.to(projectId).emit("task-editing-stop", { taskId, user });
+      },
+    );
+
+    socket.on(
+      "task-mention",
+      async ({
+        projectId: _projectId,
+        taskId: _taskId,
+        taskTitle,
+        mentionedIds,
+        mentionedBy,
+      }: TaskMentionPayload) => {
+        for (const userId of mentionedIds) {
+          try {
+            const notification = await prisma.notification.create({
+              data: {
+                userId,
+                message: `${mentionedBy.name} mentioned you in "${taskTitle}"`,
+              },
+            });
+            io.to(`user:${userId}`).emit("notification", notification);
+          } catch {
+            // never crash the socket
+          }
+        }
       },
     );
 

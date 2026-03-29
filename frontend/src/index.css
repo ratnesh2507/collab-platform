@@ -933,3 +933,44 @@ select.input option {
   border-radius: var(--radius-xl);
   color: var(--color-ink-dim);
 }
+
+/* Rich editor content styles */
+.rich-editor .tiptap {
+  outline: none;
+}
+
+.rich-editor .tiptap p {
+  margin: 0 0 0.25rem;
+}
+.rich-editor .tiptap ul {
+  padding-left: 1.25rem;
+  list-style: disc;
+}
+.rich-editor .tiptap code {
+  background: var(--surface-3);
+  border-radius: 3px;
+  padding: 0.1em 0.3em;
+  font-size: 0.85em;
+  font-family: monospace;
+}
+
+/* Mention chip */
+.mention {
+  display: inline-flex;
+  align-items: center;
+  background: var(--primary-dim, rgba(99, 102, 241, 0.15));
+  color: var(--primary);
+  border-radius: 4px;
+  padding: 0 4px;
+  font-weight: 500;
+  font-size: 0.9em;
+}
+
+/* Placeholder */
+.tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: var(--ink-ghost);
+  pointer-events: none;
+  float: left;
+  height: 0;
+}
