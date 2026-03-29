@@ -1,12 +1,12 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
-import authRoutes from "./routes/auth.routes.js";
-import projectRoutes from "./routes/project.routes.js";
-import taskRoutes from "./routes/task.routes.js";
+import authRoutes from "./routes/auth.routes";
+import projectRoutes from "./routes/project.routes";
+import taskRoutes from "./routes/task.routes";
 import notificationRoutes, {
   activityRouter,
-} from "./routes/notification.routes.js";
+} from "./routes/notification.routes";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
