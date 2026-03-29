@@ -3,8 +3,8 @@ dotenv.config();
 
 import { createServer } from "http";
 import { Server } from "socket.io";
-import app from "./app";
-import { setupSocket } from "./socket/socket";
+import app from "./app.js";
+import { setupSocket } from "./socket/socket.js";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const PORT = process.env.PORT || 5000;
