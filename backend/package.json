@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
-    "build": "tsc",
+    "build": "tsc --project tsconfig.build.json",
     "start": "node dist/index.js",
     "lint": "eslint src/**/*.ts",
     "typecheck": "tsc --noEmit",
