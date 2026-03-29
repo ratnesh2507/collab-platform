@@ -78,7 +78,13 @@ export function useDeleteTask(projectId: string) {
 
 export function useMoveTask(projectId: string) {
   const queryClient = useQueryClient();
-  return useMutation<Task, Error, MoveTaskInput>({
+
+  return useMutation<
+    Task,
+    Error,
+    MoveTaskInput,
+    { previousBoard: ProjectWithColumns | undefined }
+  >({
     mutationFn: async ({ taskId, columnId, order }: MoveTaskInput) => {
       const res = await api.patch(
         `/api/projects/${projectId}/tasks/${taskId}/move`,
@@ -86,7 +92,67 @@ export function useMoveTask(projectId: string) {
       );
       return res.data;
     },
-    onSuccess: () => {
+
+    onMutate: async ({ taskId, columnId, order }) => {
+      // 1. Cancel any in-flight refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ["board", projectId] });
+
+      // 2. Snapshot the current state so we can roll back on error
+      const previousBoard = queryClient.getQueryData<ProjectWithColumns>([
+        "board",
+        projectId,
+      ]);
+
+      // 3. Optimistically reorder the board in the cache
+      queryClient.setQueryData<ProjectWithColumns>(
+        ["board", projectId],
+        (old) => {
+          if (!old) return old;
+
+          // Find the task being moved
+          let movingTask: Task | undefined;
+          const columnsWithoutTask = old.columns.map((col) => ({
+            ...col,
+            tasks: col.tasks.filter((t) => {
+              if (t.id === taskId) {
+                movingTask = t;
+                return false;
+              }
+              return true;
+            }),
+          }));
+
+          if (!movingTask) return old;
+
+          // Insert the task into the target column at the target order
+          const updatedColumns = columnsWithoutTask.map((col) => {
+            if (col.id !== columnId) return col;
+            const newTasks = [...col.tasks];
+            newTasks.splice(order, 0, {
+              ...movingTask!,
+              columnId,
+            });
+            return { ...col, tasks: newTasks };
+          });
+
+          return { ...old, columns: updatedColumns };
+        },
+      );
+
+      // 4. Return snapshot so onError can roll back
+      return { previousBoard };
+    },
+
+    onError: (_err, _variables, context) => {
+      // Roll back to the snapshot
+      if (context?.previousBoard) {
+        queryClient.setQueryData(["board", projectId], context.previousBoard);
+      }
+    },
+
+    onSettled: () => {
+      // Always refetch after mutation completes (success or error)
+      // to make sure our cache matches the server
       queryClient.invalidateQueries({ queryKey: ["board", projectId] });
     },
   });

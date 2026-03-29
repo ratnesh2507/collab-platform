@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { X, Trash2, Save, Calendar, User } from "lucide-react";
 import type { Task, ProjectMember } from "../../types";
+import type { User as UserType } from "../../types";
 import { useUpdateTask, useDeleteTask } from "../../hooks/useTasks";
 import { getSocket } from "../../lib/socket";
 
@@ -9,6 +10,7 @@ type Props = {
   projectId: string;
   members: ProjectMember[];
   onClose: () => void;
+  currentUser: UserType;
 };
 
 const priorities = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
@@ -66,6 +68,32 @@ export default function TaskDetailPanel({
   };
 
   const selectedMember = members.find((m) => m.user.id === assigneeId);
+
+  // Emit editing presence on mount, stop on unmount
+  useEffect(() => {
+    const socket = getSocket();
+    socket.emit("task-editing-start", {
+      projectId,
+      taskId: task.id,
+      user: {
+        id: currentUser.id,
+        name: currentUser.name,
+        avatar: currentUser.avatar,
+      },
+    });
+
+    return () => {
+      socket.emit("task-editing-stop", {
+        projectId,
+        taskId: task.id,
+        user: {
+          id: currentUser.id,
+          name: currentUser.name,
+          avatar: currentUser.avatar,
+        },
+      });
+    };
+  }, [projectId, task.id, currentUser]);
 
   return (
     <div className="fixed inset-0 z-50 flex justify-end">

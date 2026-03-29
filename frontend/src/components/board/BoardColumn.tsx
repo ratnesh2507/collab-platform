@@ -14,6 +14,7 @@ type Props = {
   projectId: string;
   members: ProjectMember[];
   onTaskClick: (task: Task) => void;
+  editingUsers: Record<string, { id: string; name: string; avatar: string }>;
 };
 
 const columnColors: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function BoardColumn({
   projectId,
   members,
   onTaskClick,
+  editingUsers,
 }: Props) {
   const [showModal, setShowModal] = useState(false);
   const { setNodeRef, isOver } = useDroppable({ id: column.id });
@@ -73,7 +75,12 @@ export default function BoardColumn({
             </div>
           ) : (
             column.tasks.map((task) => (
-              <TaskCard key={task.id} task={task} onClick={onTaskClick} />
+              <TaskCard
+                key={task.id}
+                task={task}
+                onClick={onTaskClick}
+                editingUser={editingUsers[task.id]}
+              />
             ))
           )}
         </div>

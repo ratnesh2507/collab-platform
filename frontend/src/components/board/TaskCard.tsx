@@ -6,6 +6,7 @@ import { CSS } from "@dnd-kit/utilities";
 type Props = {
   task: Task;
   onClick: (task: Task) => void;
+  editingUser?: { id: string; name: string; avatar: string };
 };
 
 const priorityClass: Record<string, string> = {
@@ -50,6 +51,24 @@ export default function TaskCard({ task, onClick }: Props) {
         <p className="text-[11px] text-ink-dim leading-snug line-clamp-2">
           {task.description}
         </p>
+      )}
+
+      {/* Editing presence indicator */}
+      {editingUser && (
+        <div className="flex items-center gap-1.5 py-1 px-2 rounded-md bg-primary/10 border border-primary/20">
+          <img
+            src={editingUser.avatar}
+            alt={editingUser.name}
+            width={14}
+            height={14}
+            referrerPolicy="no-referrer"
+            className="avatar w-3.5 h-3.5 shrink-0"
+          />
+          <span className="text-[10px] text-primary font-medium truncate">
+            {editingUser.name} is editing...
+          </span>
+          <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse shrink-0 ml-auto" />
+        </div>
       )}
 
       {/* Footer */}

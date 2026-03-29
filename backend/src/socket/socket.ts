@@ -25,6 +25,16 @@ interface TaskMovedPayload {
   order: number;
 }
 
+interface TaskEditingPayload {
+  projectId: string;
+  taskId: string;
+  user: {
+    id: string;
+    name: string;
+    avatar: string;
+  };
+}
+
 export function setupSocket(io: Server) {
   io.on("connection", (socket: Socket) => {
     if (isDev) console.log("Client connected:", socket.id);
@@ -75,6 +85,21 @@ export function setupSocket(io: Server) {
       "task-moved",
       ({ projectId, taskId, columnId, order }: TaskMovedPayload) => {
         socket.to(projectId).emit("task-moved", { taskId, columnId, order });
+      },
+    );
+
+    // Task editing presence
+    socket.on(
+      "task-editing-start",
+      ({ projectId, taskId, user }: TaskEditingPayload) => {
+        socket.to(projectId).emit("task-editing-start", { taskId, user });
+      },
+    );
+
+    socket.on(
+      "task-editing-stop",
+      ({ projectId, taskId, user }: TaskEditingPayload) => {
+        socket.to(projectId).emit("task-editing-stop", { taskId, user });
       },
     );
 

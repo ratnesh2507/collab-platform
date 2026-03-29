@@ -30,12 +30,15 @@ export default function Board() {
   const { reset } = useAuthStore();
   const navigate = useNavigate();
   const { data: project, isLoading, refetch } = useBoard(projectId!);
-  const { mutateAsync: moveTask } = useMoveTask(projectId!);
+  const { mutate: moveTask } = useMoveTask(projectId!);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
   const [onlineCount, setOnlineCount] = useState(1);
   const [showActivity, setShowActivity] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [editingUsers, setEditingUsers] = useState<
+    Record<string, { id: string; name: string; avatar: string }>
+  >({});
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -54,6 +57,17 @@ export default function Board() {
     socket.on("task-moved", () => refetch());
     socket.on("user-joined", () => setOnlineCount((c) => c + 1));
     socket.on("user-left", () => setOnlineCount((c) => Math.max(1, c - 1)));
+    socket.on("task-editing-start", ({ taskId, user }) => {
+      setEditingUsers((prev) => ({ ...prev, [taskId]: user }));
+    });
+
+    socket.on("task-editing-stop", ({ taskId }) => {
+      setEditingUsers((prev) => {
+        const next = { ...prev };
+        delete next[taskId];
+        return next;
+      });
+    });
 
     return () => {
       // Leave project room but don't disconnect —
@@ -65,6 +79,8 @@ export default function Board() {
       socket.off("task-moved");
       socket.off("user-joined");
       socket.off("user-left");
+      socket.off("task-editing-start");
+      socket.off("task-editing-stop");
     };
   }, [projectId, refetch, user?.id]);
 
@@ -89,18 +105,15 @@ export default function Board() {
     const taskId = active.id as string;
     const overId = over.id as string;
 
-    // Find which column the task is being dropped into
     let targetColumnId: string | null = null;
     let targetOrder = 0;
 
     for (const col of project.columns) {
-      // Dropped directly on a column (empty column)
       if (col.id === overId) {
         targetColumnId = col.id;
         targetOrder = col.tasks.length;
         break;
       }
-      // Dropped on another task
       const taskIndex = col.tasks.findIndex((t) => t.id === overId);
       if (taskIndex !== -1) {
         targetColumnId = col.id;
@@ -111,30 +124,35 @@ export default function Board() {
 
     if (!targetColumnId) return;
 
-    // Find the task's current column
     const sourceColumn = project.columns.find((c) =>
       c.tasks.some((t) => t.id === taskId),
     );
     if (!sourceColumn) return;
 
-    // No change
     if (sourceColumn.id === targetColumnId) {
       const currentIndex = sourceColumn.tasks.findIndex((t) => t.id === taskId);
       if (currentIndex === targetOrder) return;
     }
 
-    try {
-      await moveTask({ taskId, columnId: targetColumnId, order: targetOrder });
-      // Emit to other board members
-      getSocket().emit("task-moved", {
-        projectId,
-        taskId,
-        columnId: targetColumnId,
-        order: targetOrder,
-      });
-    } catch {
-      console.error("Failed to move task");
-    }
+    // Fire without await — optimistic update already happened in onMutate
+    moveTask(
+      { taskId, columnId: targetColumnId, order: targetOrder },
+      {
+        onError: () => {
+          // Card will snap back via onError rollback in useMoveTask
+          // Optionally show a toast here
+          console.error("Failed to move task — changes rolled back");
+        },
+      },
+    );
+
+    // Notify other board members
+    getSocket().emit("task-moved", {
+      projectId,
+      taskId,
+      columnId: targetColumnId,
+      order: targetOrder,
+    });
   };
 
   if (isLoading) {
@@ -281,6 +299,7 @@ export default function Board() {
               projectId={project.id}
               members={project.members}
               onTaskClick={setSelectedTask}
+              editingUsers={editingUsers}
             />
           ))}
         </div>
@@ -309,6 +328,7 @@ export default function Board() {
           projectId={project.id}
           members={project.members}
           onClose={() => setSelectedTask(null)}
+          currentUser={user!}
         />
       )}
 
