@@ -2,8 +2,22 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Placeholder from "@tiptap/extension-placeholder";
 import Mention from "@tiptap/extension-mention";
+import CodeBlockLowlight from "@tiptap/extension-code-block-lowlight";
+import { common, createLowlight } from "lowlight";
 import { useEffect, useRef, useState } from "react";
 import type { ProjectMember } from "../../types";
+import {
+  Bold,
+  Italic,
+  List,
+  Code,
+  Code2,
+  Strikethrough,
+  Undo,
+  Redo,
+} from "lucide-react";
+
+const lowlight = createLowlight(common);
 
 type Props = {
   content: string;
@@ -11,6 +25,39 @@ type Props = {
   placeholder?: string;
   members?: ProjectMember[];
 };
+
+type ToolbarButtonProps = {
+  onClick: () => void;
+  active?: boolean;
+  disabled?: boolean;
+  tooltip: string;
+  shortcut?: string;
+  children: React.ReactNode;
+};
+
+function ToolbarButton({
+  onClick,
+  active,
+  disabled,
+  tooltip,
+  shortcut,
+  children,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      title={shortcut ? `${tooltip} (${shortcut})` : tooltip}
+      className={`btn-icon w-6 h-6 text-[11px] transition-colors
+        ${active ? "bg-primary/20 text-primary" : ""}
+        ${disabled ? "opacity-30 cursor-not-allowed" : ""}
+      `}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function RichTextEditor({
   content,
@@ -25,68 +72,65 @@ export default function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Disable built-in code block — we use CodeBlockLowlight instead
+        codeBlock: false,
+      }),
       Placeholder.configure({ placeholder }),
+      CodeBlockLowlight.configure({ lowlight }),
       Mention.configure({
         HTMLAttributes: { class: "mention" },
         suggestion: {
-          items: ({ query }) => {
-            return members.filter(
+          items: ({ query }) =>
+            members.filter(
               (m) =>
                 m.user.name.toLowerCase().includes(query.toLowerCase()) ||
                 m.user.username.toLowerCase().includes(query.toLowerCase()),
-            );
-          },
-          render: () => {
-            return {
-              onStart: (props) => {
-                setSuggestionList(props.items as ProjectMember[]);
-                setShowSuggestions(true);
-                setSelectedIndex(0);
-                commandRef.current = (item: ProjectMember) => {
-                  props.command({ id: item.user.id, label: item.user.name });
-                };
-              },
-              onUpdate: (props) => {
-                setSuggestionList(props.items as ProjectMember[]);
-                setSelectedIndex(0);
-                commandRef.current = (item: ProjectMember) => {
-                  props.command({ id: item.user.id, label: item.user.name });
-                };
-              },
-              onKeyDown: (props) => {
-                if (props.event.key === "ArrowDown") {
-                  setSelectedIndex((i) =>
-                    i < suggestionList.length - 1 ? i + 1 : i,
-                  );
-                  return true;
-                }
-                if (props.event.key === "ArrowUp") {
-                  setSelectedIndex((i) => (i > 0 ? i - 1 : 0));
-                  return true;
-                }
-                if (props.event.key === "Enter") {
-                  const item = suggestionList[selectedIndex];
-                  if (item && commandRef.current) commandRef.current(item);
-                  setShowSuggestions(false);
-                  return true;
-                }
-                if (props.event.key === "Escape") {
-                  setShowSuggestions(false);
-                  return true;
-                }
-                return false;
-              },
-              onExit: () => setShowSuggestions(false),
-            };
-          },
+            ),
+          render: () => ({
+            onStart: (props) => {
+              setSuggestionList(props.items as ProjectMember[]);
+              setShowSuggestions(true);
+              setSelectedIndex(0);
+              commandRef.current = (item: ProjectMember) =>
+                props.command({ id: item.user.id, label: item.user.name });
+            },
+            onUpdate: (props) => {
+              setSuggestionList(props.items as ProjectMember[]);
+              setSelectedIndex(0);
+              commandRef.current = (item: ProjectMember) =>
+                props.command({ id: item.user.id, label: item.user.name });
+            },
+            onKeyDown: (props) => {
+              if (props.event.key === "ArrowDown") {
+                setSelectedIndex((i) =>
+                  i < suggestionList.length - 1 ? i + 1 : i,
+                );
+                return true;
+              }
+              if (props.event.key === "ArrowUp") {
+                setSelectedIndex((i) => (i > 0 ? i - 1 : 0));
+                return true;
+              }
+              if (props.event.key === "Enter") {
+                const item = suggestionList[selectedIndex];
+                if (item && commandRef.current) commandRef.current(item);
+                setShowSuggestions(false);
+                return true;
+              }
+              if (props.event.key === "Escape") {
+                setShowSuggestions(false);
+                return true;
+              }
+              return false;
+            },
+            onExit: () => setShowSuggestions(false),
+          }),
         },
       }),
     ],
     content,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
+    onUpdate: ({ editor }) => onChange(editor.getHTML()),
   });
 
   // Sync external content changes (e.g. when task changes)
@@ -97,46 +141,95 @@ export default function RichTextEditor({
   }, [content, editor]);
 
   return (
-    <div className="relative">
+    <div className="relative rounded-lg border border-border overflow-hidden focus-within:border-primary/50 transition-colors">
       {/* Toolbar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 border-b border-border bg-surface-2 rounded-t-lg">
-        <button
-          type="button"
+      <div className="flex items-center gap-0.5 px-2 py-1.5 border-b border-border bg-surface-2">
+        {/* Text formatting */}
+        <ToolbarButton
           onClick={() => editor?.chain().focus().toggleBold().run()}
-          className={`btn-icon text-[11px] font-bold w-6 h-6 ${editor?.isActive("bold") ? "bg-primary/20 text-primary" : ""}`}
+          active={editor?.isActive("bold")}
+          tooltip="Bold"
+          shortcut="Ctrl+B"
         >
-          B
-        </button>
-        <button
-          type="button"
+          <Bold size={12} />
+        </ToolbarButton>
+
+        <ToolbarButton
           onClick={() => editor?.chain().focus().toggleItalic().run()}
-          className={`btn-icon text-[11px] italic w-6 h-6 ${editor?.isActive("italic") ? "bg-primary/20 text-primary" : ""}`}
+          active={editor?.isActive("italic")}
+          tooltip="Italic"
+          shortcut="Ctrl+I"
         >
-          I
-        </button>
-        <button
-          type="button"
+          <Italic size={12} />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor?.chain().focus().toggleStrike().run()}
+          active={editor?.isActive("strike")}
+          tooltip="Strikethrough"
+          shortcut="Ctrl+Shift+S"
+        >
+          <Strikethrough size={12} />
+        </ToolbarButton>
+
+        <div className="w-px h-4 bg-border mx-1 shrink-0" />
+
+        {/* Blocks */}
+        <ToolbarButton
           onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          className={`btn-icon text-[11px] w-6 h-6 ${editor?.isActive("bulletList") ? "bg-primary/20 text-primary" : ""}`}
+          active={editor?.isActive("bulletList")}
+          tooltip="Bullet list"
+          shortcut="Ctrl+Shift+8"
         >
-          •—
-        </button>
-        <button
-          type="button"
+          <List size={12} />
+        </ToolbarButton>
+
+        <ToolbarButton
           onClick={() => editor?.chain().focus().toggleCode().run()}
-          className={`btn-icon text-[11px] font-mono w-6 h-6 ${editor?.isActive("code") ? "bg-primary/20 text-primary" : ""}`}
+          active={editor?.isActive("code")}
+          tooltip="Inline code"
+          shortcut="Ctrl+E"
         >
-          {"<>"}
-        </button>
-        <span className="text-[10px] text-ink-ghost ml-auto">
-          Type @ to mention
-        </span>
+          <Code size={12} />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
+          active={editor?.isActive("codeBlock")}
+          tooltip="Code block"
+          shortcut="Ctrl+Alt+C"
+        >
+          <Code2 size={12} />
+        </ToolbarButton>
+
+        <div className="w-px h-4 bg-border mx-1 shrink-0" />
+
+        {/* Undo / Redo */}
+        <ToolbarButton
+          onClick={() => editor?.chain().focus().undo().run()}
+          disabled={!editor?.can().undo()}
+          tooltip="Undo"
+          shortcut="Ctrl+Z"
+        >
+          <Undo size={12} />
+        </ToolbarButton>
+
+        <ToolbarButton
+          onClick={() => editor?.chain().focus().redo().run()}
+          disabled={!editor?.can().redo()}
+          tooltip="Redo"
+          shortcut="Ctrl+Shift+Z"
+        >
+          <Redo size={12} />
+        </ToolbarButton>
+
+        <span className="text-[10px] text-ink-ghost ml-auto">@ to mention</span>
       </div>
 
-      {/* Editor */}
+      {/* Editor content */}
       <EditorContent
         editor={editor}
-        className="rich-editor rounded-b-lg min-h-25 px-3 py-2 text-[13px]"
+        className="rich-editor min-h-25 px-3 py-2 text-[13px]"
       />
 
       {/* Mention suggestions dropdown */}
