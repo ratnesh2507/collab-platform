@@ -27,14 +27,43 @@
 
 ## ✨ Features
 
+### 🔐 Authentication & Access
+
 - GitHub OAuth — Sign in instantly with your GitHub account
-- Project Management — Create projects, invite teammates via shareable links
-- Kanban Boards — Backlog → In Progress → In Review → Done
-- Task Management — Create, edit, delete, assign tasks with priority levels
-- Drag & Drop — Reorder and move tasks between columns with persistence
-- Real-time Sync — Instant updates via Socket.IO
-- Online Presence — Track active users on a board
-- Activity Logging — Automatic tracking of all actions
+- Secure auth using JWT + httpOnly cookies
+- Role-based access for project collaboration
+
+### 📋 Project & Task Management
+
+- Create projects and invite teammates via shareable links
+- Kanban boards — Backlog → In Progress → In Review → Done
+- Full task lifecycle — create, edit, delete, assign, prioritize
+- Drag & drop with persistent ordering
+
+### ⚡ Real-Time Collaboration
+
+- Live updates on task changes (create/edit/delete/move)
+- Real-time sync powered by Socket.IO
+- Online presence indicators
+- Activity feed with granular tracking
+
+### 💬 Collaboration Enhancements
+
+- @mentions — Tag teammates in task descriptions/comments
+- Rich text descriptions — Format tasks with enhanced editing support
+- Notifications system for mentions and activity
+
+### 🧪 Testing & Quality
+
+- Backend testing with Jest + Supertest
+- API endpoint coverage for reliability
+- Input validation using Zod
+
+### 🔄 CI/CD
+
+- Continuous Integration setup for automated checks
+- Linting & test runs on pull requests
+- Ensures stability before merges
 
 ## 🚀 Highlights
 
@@ -69,6 +98,7 @@
 | Socket.IO              | WebSockets     |
 | JWT + httpOnly cookies | Authentication |
 | Zod                    | Validation     |
+| Jest + Supertest       | Validation     |
 
 ## 🏗 Architecture
 
