@@ -65,3 +65,12 @@ export interface ColumnWithTasks extends Column {
 export interface ProjectWithColumns extends Project {
   columns: ColumnWithTasks[];
 }
+
+export interface AISuggestion {
+  suggestedPriority: TaskPriority;
+  priorityReason: string;
+  subtasks: Array<{
+    title: string;
+    priority: TaskPriority;
+  }>;
+}

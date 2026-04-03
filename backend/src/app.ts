@@ -7,6 +7,7 @@ import taskRoutes from "./routes/task.routes";
 import notificationRoutes, {
   activityRouter,
 } from "./routes/notification.routes";
+import aiRoutes from "./routes/ai.routes";
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
@@ -19,6 +20,7 @@ app.use(cookieParser());
 app.use("/api/auth", authRoutes);
 app.use("/api/projects", projectRoutes);
 app.use("/api/projects/:projectId/tasks", taskRoutes);
+app.use("/api/projects/:projectId/tasks/:taskId", aiRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/projects/:projectId/activity", activityRouter);
 

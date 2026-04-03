@@ -5,6 +5,10 @@ import type { User as UserType } from "../../types";
 import { useUpdateTask, useDeleteTask } from "../../hooks/useTasks";
 import { getSocket } from "../../lib/socket";
 import RichTextEditor from "../ui/RichTextEditor";
+import { useAISuggest } from "../../hooks/useAISuggest";
+import { useCreateTask } from "../../hooks/useTasks";
+import type { AISuggestion } from "../../types";
+import { Sparkles, Check, X as XIcon } from "lucide-react";
 
 type Props = {
   task: Task;
@@ -41,6 +45,18 @@ export default function TaskDetailPanel({
   );
   const [assigneeId, setAssigneeId] = useState(task.assigneeId ?? "");
   const [confirmDelete, setConfirmDelete] = useState(false);
+
+  //AI suggestion states
+  const { mutate: getAISuggestions, isPending: isLoadingAI } = useAISuggest(
+    projectId,
+    task.id,
+  );
+  const { mutateAsync: createTask } = useCreateTask(projectId);
+  const [aiSuggestion, setAiSuggestion] = useState<AISuggestion | null>(null);
+  const [rejectedSubtasks, setRejectedSubtasks] = useState<Set<number>>(
+    new Set(),
+  );
+  const [acceptedPriority, setAcceptedPriority] = useState(false);
 
   const hasChanges =
     title !== task.title ||
@@ -90,6 +106,50 @@ export default function TaskDetailPanel({
   };
 
   const selectedMember = members.find((m) => m.user.id === assigneeId);
+
+  const handleAISuggest = () => {
+    setAiSuggestion(null);
+    setRejectedSubtasks(new Set());
+    setAcceptedPriority(false);
+    getAISuggestions(undefined, {
+      onSuccess: (data) => setAiSuggestion(data),
+    });
+  };
+
+  const handleAcceptPriority = () => {
+    setPriority(aiSuggestion!.suggestedPriority);
+    setAcceptedPriority(true);
+  };
+
+  const handleAcceptSubtasks = async () => {
+    if (!aiSuggestion) return;
+    const toCreate = aiSuggestion.subtasks.filter(
+      (_, i) => !rejectedSubtasks.has(i),
+    );
+    await Promise.all(
+      toCreate.map((subtask) =>
+        createTask({
+          title: subtask.title,
+          priority: subtask.priority,
+          columnId: task.columnId,
+        }),
+      ),
+    );
+    setAiSuggestion(null);
+    getSocket().emit("task-created", { projectId });
+  };
+
+  const toggleRejectSubtask = (index: number) => {
+    setRejectedSubtasks((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
+      return next;
+    });
+  };
 
   // Emit editing presence on mount, stop on unmount
   useEffect(() => {
@@ -158,15 +218,12 @@ export default function TaskDetailPanel({
           {/* Description */}
           <div className="form-group">
             <label className="form-label">Description</label>
-            <div className="form-group">
-              <label className="form-label">Description</label>
-              <RichTextEditor
-                content={description}
-                onChange={setDescription}
-                placeholder="Add a description..."
-                members={members}
-              />
-            </div>
+            <RichTextEditor
+              content={description}
+              onChange={setDescription}
+              placeholder="Add a description..."
+              members={members}
+            />
           </div>
 
           {/* Priority */}
@@ -238,6 +295,102 @@ export default function TaskDetailPanel({
               </p>
             </div>
           </div>
+          {/* AI Suggestions */}
+          {aiSuggestion && (
+            <div className="flex flex-col gap-3 p-3 rounded-lg border border-primary/30 bg-primary/5">
+              <div className="flex items-center gap-2">
+                <Sparkles size={13} className="text-primary shrink-0" />
+                <span className="text-[12px] font-semibold text-primary">
+                  AI Suggestions
+                </span>
+              </div>
+
+              {/* Priority suggestion */}
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[11px] text-ink-dim font-medium">
+                  Suggested Priority
+                </p>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex flex-col gap-0.5">
+                    <span
+                      className={`badge w-fit priority-${aiSuggestion.suggestedPriority.toLowerCase()}`}
+                    >
+                      {aiSuggestion.suggestedPriority}
+                    </span>
+                    <p className="text-[10px] text-ink-ghost">
+                      {aiSuggestion.priorityReason}
+                    </p>
+                  </div>
+                  {!acceptedPriority &&
+                    aiSuggestion.suggestedPriority !== priority && (
+                      <button
+                        onClick={handleAcceptPriority}
+                        className="btn btn-primary btn-xs shrink-0"
+                      >
+                        <Check size={11} />
+                        Apply
+                      </button>
+                    )}
+                  {acceptedPriority && (
+                    <span className="text-[10px] text-success font-medium">
+                      Applied ✓
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Subtasks */}
+              <div className="flex flex-col gap-1.5">
+                <p className="text-[11px] text-ink-dim font-medium">
+                  Suggested Subtasks
+                </p>
+                <div className="flex flex-col gap-1">
+                  {aiSuggestion.subtasks.map((subtask, i) => (
+                    <div
+                      key={i}
+                      className={`flex items-center gap-2 px-2 py-1.5 rounded-md border transition-colors ${
+                        rejectedSubtasks.has(i)
+                          ? "border-border bg-surface opacity-50"
+                          : "border-primary/20 bg-surface"
+                      }`}
+                    >
+                      <span
+                        className={`badge text-[9px] priority-${subtask.priority.toLowerCase()} shrink-0`}
+                      >
+                        {subtask.priority}
+                      </span>
+                      <p
+                        className={`text-[11px] flex-1 leading-snug ${rejectedSubtasks.has(i) ? "line-through text-ink-ghost" : "text-ink"}`}
+                      >
+                        {subtask.title}
+                      </p>
+                      <button
+                        onClick={() => toggleRejectSubtask(i)}
+                        className="btn-icon w-5 h-5 shrink-0"
+                      >
+                        <XIcon size={10} className="text-ink-ghost" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={handleAcceptSubtasks}
+                  disabled={
+                    rejectedSubtasks.size === aiSuggestion.subtasks.length
+                  }
+                  className="btn btn-primary btn-sm mt-1"
+                >
+                  <Check size={13} />
+                  Add {aiSuggestion.subtasks.length -
+                    rejectedSubtasks.size}{" "}
+                  Subtask
+                  {aiSuggestion.subtasks.length - rejectedSubtasks.size !== 1
+                    ? "s"
+                    : ""}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -270,7 +423,17 @@ export default function TaskDetailPanel({
                 <Trash2 size={13} />
                 Delete
               </button>
-
+              <button
+                onClick={handleAISuggest}
+                disabled={isLoadingAI}
+                className="btn btn-secondary btn-sm"
+              >
+                <Sparkles
+                  size={13}
+                  className={isLoadingAI ? "animate-pulse text-primary" : ""}
+                />
+                {isLoadingAI ? "Thinking..." : "AI Suggest"}
+              </button>
               <button
                 onClick={handleSave}
                 disabled={isUpdating || !hasChanges}
