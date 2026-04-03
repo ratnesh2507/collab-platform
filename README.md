@@ -1,124 +1,129 @@
 # BranchBoard
 
-> A real-time developer collaboration platform. Kanban boards, team collaboration, and live updates — built for developers.
+> A real-time developer collaboration platform built for developers — Kanban boards, live presence, rich text tasks, and instant sync via WebSockets.
+
+![CI](https://github.com/ratnesh2507/collab-platform/actions/workflows/ci.yml/badge.svg)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Node](https://img.shields.io/badge/node-22%2B-brightgreen)
 
 ## 🌐 Live Demo
 
-- Frontend: https://collab-platform-beta.vercel.app/
-- Backend API: https://branchboard.onrender.com/
+- **App:** https://branch-board.vercel.app/
+- **Backend API:** https://branchboard.onrender.com/
 
 ## 📸 Screenshots
 
-| Dashboard                            | Board                            |
-| ------------------------------------ | -------------------------------- |
-| ![](./frontend/public/dashboard.png) | ![](./frontend/public/board.png) |
+| Dashboard                                     | Board                                 |
+| --------------------------------------------- | ------------------------------------- |
+| ![Dashboard](./frontend/public/dashboard.png) | ![Board](./frontend/public/board.png) |
 
-| New Project                            | Task                                |
-| -------------------------------------- | ----------------------------------- |
-| ![](./frontend/public/new_project.png) | ![](./frontend/public/new_task.png) |
+| New Project                                       | Task Detail                             |
+| ------------------------------------------------- | --------------------------------------- |
+| ![New Project](./frontend/public/new_project.png) | ![Task](./frontend/public/new_task.png) |
 
-| Edit Task                            | Activity Feed                            |
-| ------------------------------------ | ---------------------------------------- |
-| ![](./frontend/public/edit_task.png) | ![](./frontend/public/activity_feed.png) |
+| Live Editing Presence                                   | Notifications                                         |
+| ------------------------------------------------------- | ----------------------------------------------------- |
+| ![Live Indicator](./frontend/public/live_indicator.png) | ![Notifications](./frontend/public/notifications.png) |
 
-| Notifications                            |
-| ---------------------------------------- |
-| ![](./frontend/public/notifications.png) |
+| Rich Text Editor                              | Activity Feed                                    |
+| --------------------------------------------- | ------------------------------------------------ |
+| ![Edit Task](./frontend/public/edit_task.png) | ![Activity](./frontend/public/activity_feed.png) |
 
 ## ✨ Features
 
 ### 🔐 Authentication & Access
 
-- GitHub OAuth — Sign in instantly with your GitHub account
-- Secure auth using JWT + httpOnly cookies
-- Role-based access for project collaboration
+- GitHub OAuth — one-click sign in with your GitHub account
+- Secure JWT authentication via httpOnly cookies (cross-origin safe)
+- Shareable invite links for project onboarding
 
 ### 📋 Project & Task Management
 
 - Create projects and invite teammates via shareable links
 - Kanban boards — Backlog → In Progress → In Review → Done
 - Full task lifecycle — create, edit, delete, assign, prioritize
-- Drag & drop with persistent ordering
+- **Optimistic UI** — drag & drop updates instantly, rolls back automatically on error
+- Persistent column ordering and task positions
 
 ### ⚡ Real-Time Collaboration
 
-- Live updates on task changes (create/edit/delete/move)
-- Real-time sync powered by Socket.IO
-- Online presence indicators
-- Activity feed with granular tracking
+- Live task updates via Socket.IO — no polling, no page refreshes
+- **Live editing presence** — see exactly who is editing a task right now
+- Online member count and presence indicators
+- Activity feed with granular per-action tracking
 
-### 💬 Collaboration Enhancements
+### ✍️ Rich Text & Mentions
 
-- @mentions — Tag teammates in task descriptions/comments
-- Rich text descriptions — Format tasks with enhanced editing support
-- Notifications system for mentions and activity
+- **Tiptap editor** — bold, italic, strikethrough, bullet lists, inline code, syntax-highlighted code blocks
+- **@mentions** — tag teammates directly in task descriptions
+- Mention notifications delivered in real time to the notification bell
+- Undo/redo history in the editor
 
 ### 🧪 Testing & Quality
 
-- Backend testing with Jest + Supertest
-- API endpoint coverage for reliability
-- Input validation using Zod
+- Backend API tested with **Jest + Supertest** — task CRUD, auth guards, 403/404 coverage
+- Full TypeScript strict mode on both frontend and backend
+- Input validation with Zod on every API endpoint
 
 ### 🔄 CI/CD
 
-- Continuous Integration setup for automated checks
-- Linting & test runs on pull requests
-- Ensures stability before merges
-
-## 🚀 Highlights
-
-- Real-time collaboration using WebSockets
-- Scalable architecture with separated frontend/backend
-- Cloud deployment with connection pooling
-- Secure authentication using httpOnly cookies
+- **GitHub Actions** pipeline — lint, typecheck, and tests run on every push and PR
+- Separate `tsconfig.build.json` for production builds (excludes test/mock files)
+- Render auto-deploys on merge to main
 
 ## 🛠 Tech Stack
 
 ### Frontend
 
-| Technology       | Purpose                 |
-| ---------------- | ----------------------- |
-| React + Vite     | UI framework            |
-| TypeScript       | Type safety             |
-| Tailwind CSS v4  | Styling                 |
-| TanStack Query   | Data fetching + caching |
-| Zustand          | Auth state              |
-| dnd-kit          | Drag and drop           |
-| Socket.IO Client | Real-time updates       |
-| React Router v7  | Routing                 |
+| Technology          | Purpose                                    |
+| ------------------- | ------------------------------------------ |
+| React 19 + Vite     | UI framework                               |
+| TypeScript (strict) | Type safety                                |
+| Tailwind CSS v4     | Styling                                    |
+| TanStack Query v5   | Data fetching, caching, optimistic updates |
+| Zustand             | Auth state                                 |
+| dnd-kit             | Drag and drop                              |
+| Tiptap              | Rich text editor                           |
+| Socket.IO Client    | Real-time updates                          |
+| React Router v7     | Routing                                    |
 
 ### Backend
 
-| Technology             | Purpose        |
-| ---------------------- | -------------- |
-| Node.js + Express      | Server         |
-| TypeScript             | Type safety    |
-| Prisma v7              | ORM            |
-| PostgreSQL             | Database       |
-| Socket.IO              | WebSockets     |
-| JWT + httpOnly cookies | Authentication |
-| Zod                    | Validation     |
-| Jest + Supertest       | Validation     |
+| Technology             | Purpose            |
+| ---------------------- | ------------------ |
+| Node.js + Express v5   | Server             |
+| TypeScript (strict)    | Type safety        |
+| Prisma v7              | ORM                |
+| PostgreSQL (Supabase)  | Database           |
+| Socket.IO              | WebSockets         |
+| JWT + httpOnly cookies | Authentication     |
+| Zod                    | Request validation |
+| Jest + Supertest       | API testing        |
 
 ## 🏗 Architecture
 
 ```
 Frontend (Vercel)
-↓
+      ↓  REST + httpOnly cookies
 Backend (Render)
-↓
+      ↓  Prisma ORM
 Supabase (PostgreSQL)
+
+Frontend ←→ Backend (Socket.IO WebSocket)
 ```
 
-- Backend handles authentication and authorization
-- Supabase is used as a managed PostgreSQL database (no direct client access)
-- Socket.IO enables real-time collaboration
+**Key decisions:**
+
+- Backend owns all auth — the frontend never touches JWTs directly
+- Supabase used as a managed Postgres host with connection pooling (no direct client access)
+- Socket.IO rooms per project — events are scoped, not broadcast globally
+- Optimistic updates via TanStack Query `onMutate`/`onError` — UI updates instantly, rolls back on server error without a refetch flicker
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
+- Node.js 22+
 - A GitHub account (for OAuth)
 
 ### 1. Clone the repository
@@ -170,15 +175,16 @@ npx prisma db push
 npx prisma generate
 ```
 
-### 5. GitHub OAuth App
+### 5. GitHub OAuth App (local dev)
 
 1. Go to **GitHub → Settings → Developer Settings → OAuth Apps → New OAuth App**
-2. Set **Authorization callback URL** to `http://localhost:5000/api/auth/github/callback`
-3. Copy **Client ID** and **Client Secret** into `backend/.env`
+2. Set **Homepage URL** to `http://localhost:5173`
+3. Set **Authorization callback URL** to `http://localhost:5000/api/auth/github/callback`
+4. Copy **Client ID** and **Client Secret** into `backend/.env`
+
+> For production, create a separate OAuth app pointing to your deployed URLs.
 
 ### 6. Run the project
-
-You need 2 terminals:
 
 ```bash
 # Terminal 1 — Backend
@@ -190,28 +196,39 @@ cd frontend && npm run dev
 
 Visit `http://localhost:5173` and sign in with GitHub.
 
+### 7. Run tests
+
+```bash
+cd backend && npm test
+```
+
 ## 📁 Project Structure
 
 ```
 collab-platform/
+├── .github/
+│   └── workflows/
+│       └── ci.yml              # Lint, typecheck, test pipeline
 ├── frontend/
 │   └── src/
 │       ├── components/
-│       │   ├── board/         # Board, TaskCard, Modals, Panels
-│       │   ├── projects/      # ProjectCard, CreateProjectModal
-│       │   └── ui/
-│       ├── hooks/             # useAuth, useProjects, useTasks
-│       ├── lib/               # api.ts, socket.ts
-│       ├── pages/             # Landing, Dashboard, Board, Invite
-│       ├── store/             # authStore
-│       └── types/             # TypeScript interfaces
+│       │   ├── board/          # Board, TaskCard, TaskDetailPanel, Modals
+│       │   ├── projects/       # ProjectCard, CreateProjectModal
+│       │   └── ui/             # NotificationBell, RichTextEditor
+│       ├── hooks/              # useAuth, useProjects, useTasks, useNotifications
+│       ├── lib/                # api.ts, socket.ts
+│       ├── pages/              # Landing, Dashboard, Board, Invite
+│       ├── store/              # authStore (Zustand)
+│       └── types/              # TypeScript interfaces
 └── backend/
     └── src/
-        ├── controllers/       # auth, project, task
-        ├── middleware/        # auth middleware
-        ├── routes/            # auth, project, task routes
-        ├── socket/            # Socket.IO event handlers
-        └── lib/               # prisma.ts, jwt.ts
+        ├── controllers/        # auth, project, task, notification
+        ├── middleware/         # authenticate middleware
+        ├── routes/             # auth, project, task, notification routes
+        ├── socket/             # Socket.IO event handlers + presence
+        ├── lib/                # prisma.ts, jwt.ts
+        ├── __tests__/          # Jest + Supertest API tests
+        └── __mocks__/          # Prisma mock for testing
 ```
 
 ## 📄 License
