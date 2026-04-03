@@ -3,7 +3,13 @@ const tseslint = require("typescript-eslint");
 
 module.exports = tseslint.config(
   {
-    ignores: ["dist/**", "src/generated/**", "eslint.config.js"],
+    ignores: [
+      "dist/**",
+      "src/generated/**",
+      "eslint.config.js",
+      "src/__tests__/**",
+      "src/__mocks__/**",
+    ],
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,

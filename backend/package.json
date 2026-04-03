@@ -7,7 +7,7 @@
     "dev": "nodemon --watch src --ext ts --exec ts-node src/index.ts",
     "build": "tsc --project tsconfig.build.json",
     "start": "node dist/src/index.js",
-    "lint": "eslint src/**/*.ts",
+    "lint": "eslint src --ignore-pattern src/__tests__ --ignore-pattern src/__mocks__",
     "typecheck": "tsc --noEmit",
     "test": "jest",
     "test:watch": "jest --watch"
