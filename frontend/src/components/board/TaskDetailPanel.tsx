@@ -57,6 +57,8 @@ export default function TaskDetailPanel({
     new Set(),
   );
   const [acceptedPriority, setAcceptedPriority] = useState(false);
+  const [isCreatingSubtasks, setIsCreatingSubtasks] = useState(false);
+  const [subtaskCount, setSubtaskCount] = useState(0);
 
   const hasChanges =
     title !== task.title ||
@@ -126,17 +128,24 @@ export default function TaskDetailPanel({
     const toCreate = aiSuggestion.subtasks.filter(
       (_, i) => !rejectedSubtasks.has(i),
     );
-    await Promise.all(
-      toCreate.map((subtask) =>
-        createTask({
-          title: subtask.title,
-          priority: subtask.priority,
-          columnId: task.columnId,
-        }),
-      ),
-    );
-    setAiSuggestion(null);
-    getSocket().emit("task-created", { projectId });
+    setSubtaskCount(toCreate.length);
+    setIsCreatingSubtasks(true);
+
+    try {
+      await Promise.all(
+        toCreate.map((subtask) =>
+          createTask({
+            title: subtask.title,
+            priority: subtask.priority,
+            columnId: task.columnId,
+          }),
+        ),
+      );
+      getSocket().emit("task-created", { projectId });
+      onClose();
+    } finally {
+      setIsCreatingSubtasks(false);
+    }
   };
 
   const toggleRejectSubtask = (index: number) => {
@@ -447,6 +456,29 @@ export default function TaskDetailPanel({
           )}
         </div>
       </div>
+      {/* Subtask creation overlay */}
+      {isCreatingSubtasks && (
+        <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-surface border border-border shadow-xl">
+            <div className="flex gap-2">
+              {[0, 1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="loading-dot"
+                  style={{ animationDelay: `${i * 0.15}s` }}
+                />
+              ))}
+            </div>
+            <p className="text-[14px] font-semibold text-ink">
+              Creating subtasks...
+            </p>
+            <p className="text-[12px] text-ink-ghost">
+              Adding {subtaskCount} task{subtaskCount !== 1 ? "s" : ""} to your
+              board
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
