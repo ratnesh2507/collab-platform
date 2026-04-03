@@ -132,15 +132,13 @@ export default function TaskDetailPanel({
     setIsCreatingSubtasks(true);
 
     try {
-      await Promise.all(
-        toCreate.map((subtask) =>
-          createTask({
-            title: subtask.title,
-            priority: subtask.priority,
-            columnId: task.columnId,
-          }),
-        ),
-      );
+      for (const subtask of toCreate) {
+        await createTask({
+          title: subtask.title,
+          priority: subtask.priority,
+          columnId: task.columnId,
+        });
+      }
       getSocket().emit("task-created", { projectId });
       onClose();
     } finally {
