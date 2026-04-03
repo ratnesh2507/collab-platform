@@ -457,7 +457,7 @@ export default function TaskDetailPanel({
       {/* Subtask creation overlay */}
       {isCreatingSubtasks && (
         <div className="fixed inset-0 z-60 flex flex-col items-center justify-center gap-4 bg-black/60 backdrop-blur-sm">
-          <div className="flex flex-col items-center gap-3 p-6 rounded-2xl bg-surface border border-border shadow-xl">
+          <div className="flex flex-col items-center gap-3 p-10 rounded-3xl bg-surface border border-border shadow-xl min-w-64">
             <div className="flex gap-2">
               {[0, 1, 2].map((i) => (
                 <div

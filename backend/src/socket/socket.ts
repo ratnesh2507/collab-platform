@@ -69,7 +69,8 @@ export function setupSocket(io: Server) {
     // Task created
     socket.on("task-created", ({ projectId, task }: TaskEventPayload) => {
       socket.to(projectId).emit("task-created", task);
-      if (task.assigneeId) {
+      if (task?.assigneeId) {
+        //optional chaining
         notifyAssignee(io, task, "assigned");
       }
     });
@@ -78,7 +79,8 @@ export function setupSocket(io: Server) {
     // Note: fires on every update but assignee may not have changed
     socket.on("task-updated", ({ projectId, task }: TaskEventPayload) => {
       socket.to(projectId).emit("task-updated", task);
-      if (task.assigneeId) {
+      if (task?.assigneeId) {
+        //optional chaining
         notifyAssignee(io, task, "assigned");
       }
     });
