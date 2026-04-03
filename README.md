@@ -25,9 +25,13 @@
 | ------------------------------------------------------- | ----------------------------------------------------- |
 | ![Live Indicator](./frontend/public/live_indicator.png) | ![Notifications](./frontend/public/notifications.png) |
 
-| Rich Text Editor                              | Activity Feed                                    |
-| --------------------------------------------- | ------------------------------------------------ |
-| ![Edit Task](./frontend/public/edit_task.png) | ![Activity](./frontend/public/activity_feed.png) |
+| AI Suggestions                                  | Rich Text Editor                              |
+| ----------------------------------------------- | --------------------------------------------- |
+| ![AI Suggest](./frontend/public/ai_suggest.png) | ![Edit Task](./frontend/public/edit_task.png) |
+
+| Activity Feed                                    |
+| ------------------------------------------------ |
+| ![Activity](./frontend/public/activity_feed.png) |
 
 ## ✨ Features
 
