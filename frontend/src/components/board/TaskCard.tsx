@@ -16,6 +16,14 @@ const priorityClass: Record<string, string> = {
   CRITICAL: "priority-critical",
 };
 
+// Helper to convert RAW HTML to Text
+function stripHtml(html: string): string {
+  return html
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 export default function TaskCard({ task, onClick, editingUser }: Props) {
   const {
     attributes,
@@ -49,7 +57,7 @@ export default function TaskCard({ task, onClick, editingUser }: Props) {
       {/* Description preview */}
       {task.description && (
         <p className="text-[11px] text-ink-dim leading-snug line-clamp-2">
-          {task.description}
+          {stripHtml(task.description)}
         </p>
       )}
 
