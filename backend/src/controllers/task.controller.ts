@@ -23,6 +23,10 @@ const moveTaskSchema = z.object({
   order: z.number().int().min(0),
 });
 
+const batchDeleteSchema = z.object({
+  taskIds: z.array(z.string()).min(1).max(50),
+});
+
 // Reusable user select
 const userSelect = {
   id: true,
@@ -231,5 +235,47 @@ export async function moveTask(req: AuthRequest, res: Response): Promise<void> {
     res.json(task);
   } catch {
     res.status(500).json({ error: "Failed to move task" });
+  }
+}
+
+export async function batchDeleteTasks(
+  req: AuthRequest,
+  res: Response,
+): Promise<void> {
+  const userId = req.userId as string;
+  const projectId = req.params.projectId as string;
+
+  const parsed = batchDeleteSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.flatten() });
+    return;
+  }
+
+  const { taskIds } = parsed.data;
+
+  try {
+    const isMember = await verifyProjectMember(userId, projectId);
+    if (!isMember) {
+      res.status(403).json({ error: "Not a member of this project" });
+      return;
+    }
+
+    await prisma.task.deleteMany({
+      where: {
+        id: { in: taskIds },
+      },
+    });
+
+    await prisma.activityLog.create({
+      data: {
+        userId,
+        projectId,
+        action: `deleted ${taskIds.length} task${taskIds.length !== 1 ? "s" : ""}`,
+      },
+    });
+
+    res.json({ message: "Tasks deleted", count: taskIds.length });
+  } catch {
+    res.status(500).json({ error: "Failed to delete tasks" });
   }
 }

@@ -148,3 +148,17 @@ export function useMoveTask(projectId: string) {
     },
   });
 }
+
+export function useBatchDeleteTasks(projectId: string) {
+  const queryClient = useQueryClient();
+  return useMutation<void, Error, string[]>({
+    mutationFn: async (taskIds: string[]) => {
+      await api.delete(`/api/projects/${projectId}/tasks/batch`, {
+        data: { taskIds },
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["board", projectId] });
+    },
+  });
+}

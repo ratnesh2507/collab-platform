@@ -1,5 +1,5 @@
 import type { Task } from "../../types";
-import { User } from "lucide-react";
+import { User, Check } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -7,6 +7,8 @@ type Props = {
   task: Task;
   onClick: (task: Task) => void;
   editingUser?: { id: string; name: string; avatar: string };
+  selectMode?: boolean;
+  selected?: boolean;
 };
 
 const priorityClass: Record<string, string> = {
@@ -24,7 +26,13 @@ function stripHtml(html: string): string {
     .trim();
 }
 
-export default function TaskCard({ task, onClick, editingUser }: Props) {
+export default function TaskCard({
+  task,
+  onClick,
+  editingUser,
+  selectMode,
+  selected,
+}: Props) {
   const {
     attributes,
     listeners,
@@ -32,7 +40,7 @@ export default function TaskCard({ task, onClick, editingUser }: Props) {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: task.id });
+  } = useSortable({ id: task.id, disabled: selectMode });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -45,14 +53,27 @@ export default function TaskCard({ task, onClick, editingUser }: Props) {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
-      className="task-card flex flex-col gap-2"
+      {...(selectMode ? {} : listeners)}
+      className={`task-card flex flex-col gap-2 transition-colors ${
+        selected ? "border-primary/50 bg-primary/5" : ""
+      } ${selectMode ? "cursor-pointer" : ""}`}
       onClick={() => !isDragging && onClick(task)}
     >
-      {/* Title */}
-      <p className="text-[13px] text-ink leading-snug font-medium">
-        {task.title}
-      </p>
+      {/* Title row with checkbox */}
+      <div className="flex items-start gap-2">
+        {selectMode && (
+          <div
+            className={`w-4 h-4 rounded border shrink-0 mt-0.5 flex items-center justify-center transition-colors ${
+              selected ? "bg-primary border-primary" : "border-border"
+            }`}
+          >
+            {selected && <Check size={10} className="text-white" />}
+          </div>
+        )}
+        <p className="text-[13px] text-ink leading-snug font-medium flex-1">
+          {task.title}
+        </p>
+      </div>
 
       {/* Description preview */}
       {task.description && (
@@ -62,7 +83,7 @@ export default function TaskCard({ task, onClick, editingUser }: Props) {
       )}
 
       {/* Editing presence indicator */}
-      {editingUser && (
+      {editingUser && !selectMode && (
         <div className="flex items-center gap-1.5 py-1 px-2 rounded-md bg-primary/10 border border-primary/20">
           <img
             src={editingUser.avatar}
@@ -84,7 +105,6 @@ export default function TaskCard({ task, onClick, editingUser }: Props) {
         <span className={`badge ${priorityClass[task.priority]} text-[10px]`}>
           {task.priority}
         </span>
-
         {task.assignee ? (
           <img
             src={task.assignee.avatar}
