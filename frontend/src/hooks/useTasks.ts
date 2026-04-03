@@ -128,10 +128,7 @@ export function useMoveTask(projectId: string) {
           const updatedColumns = columnsWithoutTask.map((col) => {
             if (col.id !== columnId) return col;
             const newTasks = [...col.tasks];
-            newTasks.splice(order, 0, {
-              ...movingTask!,
-              columnId,
-            });
+            newTasks.splice(order, 0, { ...movingTask!, columnId });
             return { ...col, tasks: newTasks };
           });
 
@@ -148,12 +145,6 @@ export function useMoveTask(projectId: string) {
       if (context?.previousBoard) {
         queryClient.setQueryData(["board", projectId], context.previousBoard);
       }
-    },
-
-    onSettled: () => {
-      // Always refetch after mutation completes (success or error)
-      // to make sure our cache matches the server
-      queryClient.invalidateQueries({ queryKey: ["board", projectId] });
     },
   });
 }

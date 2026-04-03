@@ -33,11 +33,19 @@ export default function NotificationBell() {
   // Listen for real-time notifications
   useEffect(() => {
     const socket = getSocket();
-    socket.on("notification", () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
-    });
+
+    const handleNotification = (notification: Notification) => {
+      // Instantly prepend the new notification to the cache — no refetch needed
+      queryClient.setQueryData<Notification[]>(
+        ["notifications"],
+        (old = []) => [notification, ...old],
+      );
+    };
+
+    socket.on("notification", handleNotification);
+
     return () => {
-      socket.off("notification");
+      socket.off("notification", handleNotification);
     };
   }, [queryClient]);
 
